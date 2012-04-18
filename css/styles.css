@@ -1,0 +1,115 @@
+@font-face { font-family:PetitaLight; src:url(fonts/PetitaLight.eot); }
+@font-face { font-family:PetitaMedium; src:url(fonts/PetitaMedium.eot); }
+@font-face { font-family:PetitaBold; src:url(fonts/PetitaBold.eot); }
+@font-face { font-family:PetitaLight; src:url(fonts/PetitaLight.ttf); }
+@font-face { font-family:PetitaMedium; src:url(fonts/PetitaMedium.ttf); }
+@font-face { font-family:PetitaBold; src:url(fonts/PetitaBold.ttf); }
+
+* { margin:0; padding:0; }
+body { overflow:hidden; }
+
+footer, header, section { display:block; }
+
+#pageHead { position:absolute; top:0; left:0; height:50px; background:#302e25; width:100%; }
+#pageHead h1 { width:198px; height:0; overflow:hidden; padding:50px 0 0; background:url(images/dxmp_logo.png) no-repeat left 10px; margin-left:10px; }
+#search { position:absolute; right:50px; top:13px; width:246px; height:20px; font:14px sans-serif; }
+
+#main { position:absolute; top:50px; bottom:50px; left:0; background:url(images/main_bg.jpg) no-repeat; width:100%; }
+.pane { width:298px; border-left:1px solid #c8d153; border-right:1px solid #c8d153; background-color:rgba(255, 255, 255, .65); position:absolute; top:0; bottom:0; }
+#rightlist { right:0; }
+#content { position:absolute; top:0; bottom:0; left:300px; right:300px; background:url(images/content_bg.png) repeat-y center top; }
+.wallpaper { position:absolute; top:0; left:0; max-width:100%; display:none; }
+.gridBg { position:absolute; left:0; right:0; top:0; bottom:0; background:url(images/checked_bg.png); }
+
+#controls { position:absolute; bottom:0; left:0; height:50px; background:#302e25; width:100%; }
+.control { display:block; overflow:hidden; background:url(images/control_icons.png) no-repeat; height:0; padding:50px 0 0; cursor:pointer; }
+.play { width:40px; }
+.play:hover { background-position:0 -50px; }
+.pause { width:40px; background-position:-48px 0; }
+.pause:hover { background-position:-48px -50px; }
+.random { width:26px; right:18px; position:absolute; top:0; background-position:-88px 0; }
+.settings { width:26px; right:48px; position:absolute; top:0; background-position:-88px 0; }
+.random.enabled { background-position:-88px -50px; }
+.scrubBar { position:absolute; left:150px; right:150px; top:0; height:50px; background:url(images/scrub_bar.png) repeat-x; }
+.playHead { position:absolute; left:0; top:0; width:8px; background-position:-40px 0; }
+.playHead:hover { background-position:-40px -50px; }
+.next { background-position:-114px 0; position:absolute; width:26px; left:44px; top:0; }
+.next:hover { background-position:-114px -50px; }
+.vlc { width:20px; padding-top:20px; position:absolute; right:15px; top:15px; background-position:-157px 0; }
+.vlc.disabled { background-position:-157px -20px; }
+#controls .time { color:#fff; font:14px PetitaMedium, 'Trebuchet MS', sans-serif; position:absolute; top:17px; }
+#playIn { left:108px; }
+#playOut { right:108px; }
+
+#lists { overflow:hidden; -webkit-overflow-scrolling: touch; }
+
+.list { list-style:none; overflow:scroll; overflow-x:hidden; top:25px; bottom:0; position:absolute; width:100%; }
+#mainList li, #secondaryList .album li, #playlist li { padding:5px; position:relative; height:35px; cursor:pointer; }
+#mainList li:hover, #secondaryList .album li:hover, #playlist li:hover { background:rgba(200, 209, 83, .5); }
+#mainList p, #secondaryList .album p, #playlist p { font:18px PetitaBold, 'Trebuchet MS', sans-serif; padding:6px 0 0 41px; text-overflow:ellipsis; width:225px; white-space:nowrap; overflow:hidden; }
+#mainList img, #secondaryList .album img, #playlist img { max-width:35px; max-height:35px; position:absolute; left:5px; }
+
+#videoList { position:absolute; top:100%; bottom:0; left:0; right:0; z-index:9002; background:#000; overflow:hidden; }
+#videoList .wallpaper { display:block; opacity:0.1; }
+#videoList .navigation { overflow:hidden; padding:10px 0 0; position:absolute; width:100%; }
+#videoList .navigation .head { padding-left:20px; color:#5ee0cb; font:bold 14px sans-serif; cursor:pointer; }
+#videoList .navigation .show { color:#fff; font:bold 14px sans-serif; }
+#videoList .navigation .close { float:right; padding-right:20px; color:#fff; font:bold 14px sans-serif; cursor:pointer; }
+#videoList ul { list-style:none; position:absolute; top:40px; bottom:0; left:0; right:0; overflow:scroll; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+#videoList li.show, #videoList li.episode { float:left; padding:20px; width:270px; height:140px; cursor:pointer; }
+#videoList li.episode { height:auto; width:240px; }
+#videoList li.show:hover, #videoList li.episode:hover { background:rgba(200, 209, 83, .5); }
+#videoList li.episode p { font:14px PetitaBold; color:#fff; text-align:center; }
+#videoList li.show.art { height:140px; }
+#videoList li.show.art p { display:none; }
+#videoList li.show.art img { max-width:270px; max-height:140px; }
+#videoList li.show p { color:#fff; font:18px PetitaBold; text-align:center; }
+#videoList h3 { display:table-cell; text-align:center; vertical-align:middle; height:158px; width:240px; font:18px PetitaBold; color:#5ee0cb; }
+#video { position:absolute; top:90px; bottom:0; left:0; right:0; z-index:9999; display:block; background:#000; }
+#video video { height:100%; width:100%; }
+
+#secondaryList { left:298px; list-style-position:inside; counter-reset:track; }
+#secondaryList li { font:14px PetitaBold, 'Trebuchet MS', sans-serif; padding:5px; cursor:pointer; }
+#secondaryList li:hover { background:rgba(200, 209, 83, .5); }
+#secondaryList li:before { content:counter(track) ". "; counter-increment:track; }
+#secondaryList li[song_id="all"]:before, #secondaryList li[song_id="back"]:before, #secondaryList li[song_id="disc"]:before, #secondaryList li.album:before, #secondaryList li.search:before { content:none; counter-reset:track; }
+#secondaryList li.search { padding-left:45px; }
+#secondaryList li.search strong { background:#ff0; }
+
+#playlist li.played { opacity:.5; }
+#playlist li.playing { background:rgba(200, 209, 83, .5); }
+#playlistLength { position:absolute; top:0; right:5px; font:14px PetitaBold, 'Trebuchet MS', sans-serif; color:#9c9c9c; padding:4px 0 0 5px; }
+
+.header { position:absolute; top:0; left:0; right:0; background:url(images/header_bar.png) repeat-x; height:25px; }
+.header h2 { font:14px PetitaBold, 'Trebuchet MS', sans-serif; color:#9c9c9c; padding:4px 0 0 5px; }
+#option { cursor:pointer; z-index:9001; }
+#option h2 { background:url(images/drop_arrow.png) no-repeat 282px 9px; }
+#options { display:none; width:298px; background:#eee; z-index:9001; }
+#options li { font:14px PetitaMedium, 'Trebuchet MS', sans-serif; padding:5px; }
+#options li:hover { background:#c8d153; }
+
+.fader { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); display:none; z-index:100; }
+#uploads { position:absolute; top:0; left:325px; right:325px; height:50%; overflow:scroll; overflow-x:hidden; background:#fff; display:none; z-index:200; }
+#uploads h2 { font:36px PetitaLight, 'Trebuchet MS', sans-serif; color:#5ee0cb; }
+#uploads .close { position:absolute; bottom:0; left:0; right:0; font:14px PetitaBold, 'Trebuchet MS', sans-serif; color:#666; cursor:pointer; text-align:center; padding:5px 0; }
+#uploads .close:hover { background:rgb(200, 209, 83); }
+#uploads ul { list-style:none; }
+#uploads li { padding-left:20px; margin:3px 5px; font:14px PetitaBold, 'Trebuchet MS', sans-serif; }
+#uploads li.uploading { background:url(images/hourglass.png) no-repeat; }
+#uploads li.uploading span { display:inline-block; float:right; width:300px; border:1px solid #9c9c9c; background:url(images/progress.png) no-repeat -300px 0; text-align:center; font-size:10px; padding:2px 0; }
+#uploads li.complete { background:url(images/accept.png) no-repeat; }
+#uploads li.error { background:url(images/exclamation.png) no-repeat; }
+#uploads li.error span { float:right; }
+
+#nowPlaying { padding:10px 0 0 30px; }
+#nowPlaying h2 { font:36px PetitaLight, 'Trebuchet MS', sans-serif; color:#fff; }
+#nowPlaying h2 span { color:#5ee0cb; }
+#nowPlaying .songInfo { position:absolute; top:57px; left:30px; right:10px; }
+#nowPlaying .songInfo img { max-width:300px; max-height:300px; }
+#nowPlaying .songInfo h3 { color:#fff; font:18px PetitaLight, 'Trebuchet MS', sans-serif; }
+#nowPlaying .songInfo h4 { color:#5ee0cb; font:36px PetitaLight, 'Trebuchet MS', sans-serif; }
+#nowPlaying .artWrapper { position:relative; float:left; margin-right:15px; }
+#nowPlaying .artWrapper .editAlbum { display:none; border:3px solid #fff; position:absolute; top:5px; right:5px; background:#fff url(images/pencil.png) no-repeat; height:16px; width:16px; cursor:pointer; }
+#nowPlaying .artWrapper:hover .editAlbum { display:block; }
+#nowPlaying .tags { list-style:none; }
+#nowPlaying .tags li { display:inline; padding:0 15px 0 0; font:14px 'Trebuchet MS', sans-serif; color:#fff; cursor:pointer; }
