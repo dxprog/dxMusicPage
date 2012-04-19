@@ -37,7 +37,7 @@ footer, header, section { display:block; }
 .next:hover { background-position:-114px -50px; }
 .vlc { width:20px; padding-top:20px; position:absolute; right:15px; top:15px; background-position:-157px 0; }
 .vlc.disabled { background-position:-157px -20px; }
-#controls .time { color:#fff; font:14px PetitaMedium, 'Trebuchet MS', sans-serif; position:absolute; top:17px; }
+#controls .time { color:#fff; font:14px sans-serif; position:absolute; top:17px; }
 #playIn { left:108px; }
 #playOut { right:108px; }
 
@@ -113,3 +113,17 @@ footer, header, section { display:block; }
 #nowPlaying .artWrapper:hover .editAlbum { display:block; }
 #nowPlaying .tags { list-style:none; }
 #nowPlaying .tags li { display:inline; padding:0 15px 0 0; font:14px 'Trebuchet MS', sans-serif; color:#fff; cursor:pointer; }
+
+.dxPlot { height:202px; float:left; }
+.dxPlot:first-child { float:left; margin-left:0; }
+.dxPlot .group { float:left; height:100%; padding-bottom:25px; width:198px; }
+.dxPlot .above { display:block; position:absolute; width:100%; top:-15px; font:12px/1 sans-serif; text-align:center; }
+.dxPlot .group:first-child { margin:0; }
+.dxPlot .group .barWrap { float:left; width:30px; margin:0 5px; height:100%; position:relative; }
+.dxPlot .group .bar { position:absolute; bottom:0; width:100%; padding:10px 0 5px; max-height:152px; min-height:25px; }
+.dxPlot .group .value { display:block; width:100%; text-align:center; font:bold 18px/18px sans-serif; color:#fff; text-shadow:0 1px #000; }
+.dxPlot .group.items2 .barWrap { width:48%; margin:0 0 0 2px; }
+.dxPlot .group.items3 .barWrap { width:32%; margin:0 0 0 2px; }
+.dxPlot .group.items3 .barWrap:first-child { margin:0; }
+.dxPlot .group .label { position:absolute; bottom:-15px; display:block; width:100%; text-align:center; font:12px/12px sans-serif; text-transform:lowercase; color:#fff; }
+.dxPlot h1 { margin:0 0 10px; font:bold 14px/14px sans-serif; text-align:center; }

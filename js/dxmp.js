@@ -672,6 +672,17 @@
 		
 		},
 		
+		songStats:function(data) {
+			
+			var chartData = [[]];
+			$('.songInfo').append('<div id="playCountGraph"></div>');
+			for (var i = 0, count = data.body.length; i < count; i++) {
+				chartData[0].push({ value:data.body[i].total, label:data.body[i].user });
+			}
+			$('#playCountGraph').dxPlot(chartData, { animate:true, colors:['rgba(200, 209, 83, .6)', 'rgba(94, 224, 203, .6)'] });
+			
+		},
+		
 		songInfo:function(songId) {
 			
 			var
@@ -685,7 +696,7 @@
 			for (var i in song.tags) {
 				tags += templates.render('songTags', {'tag_name':song.tags[i].name});
 			}
-
+			
 			info = templates.render('songInfo', {'album_title':album.title, 'song_title':song.title, 'art':artLocation + art, 'tags':tags});
 			document.title = song.title + ' - dxMusicPage';
 			$nowPlaying.find('.songInfo').animate({'top':'+=200px', 'opacity':'0'}, 500, function() { $(this).remove(); });
@@ -695,6 +706,7 @@
 				.css({'opacity':'0', 'left':'230px'})
 				.animate({'left':'30px', 'opacity':'1'}, 500, function() {
 					$(this).removeClass('new');
+					dx.call('stats', 'getTrackUsers', { id:song.id }, display.songStats);
 					$main.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
 					if (null != album.meta && typeof (album.meta.wallpaper) === 'string') {
 						var
@@ -729,7 +741,7 @@
 		trending:function() {
 			
 			$.ajax({
-				url:'api/?type=json&method=dxmp.getTrends',
+				url:'api/?type=json&method=stats.getTrends',
 				dataType:'json',
 				success:this.songList
 			});
@@ -741,7 +753,7 @@
 
 		userTracks:function() {
 			$.ajax({
-				url:'api/?type=json&method=dxmp.getTopUserTracks&user=' + userName,
+				url:'api/?type=json&method=stats.getTopUserTracks&user=' + userName,
 				dataType:'json',
 				success:this.songList
 			});
