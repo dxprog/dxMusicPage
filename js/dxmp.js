@@ -85,7 +85,7 @@
 			id:null,
 			title:'No Album',
 			meta:{art:'no_art.png'},
-			children:1,
+			children:1
 		},
 		
 		// Helper methods
