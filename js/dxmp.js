@@ -995,6 +995,10 @@
 			load.shows();
 			load.videos();
 			
+			if (window.location.hash) {
+				playlist.queueSong(window.location.hash.replace('#', ''));
+			}
+			
 			// Display whatever list needs to be displayed
 			var list = $.cookie('list');
 			display.listByType(list);
