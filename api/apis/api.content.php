@@ -111,6 +111,12 @@ class Content {
 					case 'meta':
 						$select .= 'c.content_meta,';
 						break;
+					case 'type':
+						$select .= 'c.content_type,';
+						break;
+					case 'parent':
+						$select .= 'c.content_parent,';
+						break;
 					case 'perma':
 						$select .= 'c.content_perma,';
 						break;
@@ -160,7 +166,7 @@ class Content {
 				$order = 'DESC';
 				break;
 		}
-		$noCount = isset($vars['noCount']) && $vars['noCount'] === true;
+		$noCount = isset($vars['noCount']) && $vars['noCount'] === 'true';
 		$count = $noCount ? '' : ', (SELECT COUNT(1) FROM content WHERE content_parent=c.content_id) AS children_count';
 		
 		// Get the item count
@@ -184,14 +190,38 @@ class Content {
 			while ($row = db_Fetch($result)) {
 				$obj = null;
 				$obj->id = isset($row->content_id) ? $row->content_id : null;
-				$obj->title = isset($row->content_title) ? $row->content_title : null;
-				$obj->perma = isset($row->content_perma) ? $row->content_perma : null;
-				$obj->date = isset($row->content_date) ? $row->content_date : null;
-				$obj->body = isset($row->content_body) ? $row->content_body : null;
-				$obj->type = isset($row->content_type) ? $row->content_type : null;
-				$obj->parent = isset($row->content_parent) ? $row->content_parent : null;
-				$obj->children = $noCount === false ? $row->children_count : 0;
-				$obj->meta = isset($row->content_meta) ? json_decode($row->content_meta) : null;
+				if (isset($row->content_title)) {
+					$obj->title = $row->content_title;
+				}
+				
+				if (isset($row->content_perma)) {
+					$obj->perma = $row->content_perma;
+				}
+				
+				if (isset($row->content_perma)) {
+					$obj->date = $row->content_date;
+				}
+				
+				if (isset($row->content_body)) {
+					$obj->body = $row->content_body;
+				}
+				
+				if (isset($row->content_type)) {
+					$obj->type = $row->content_type;
+				}
+				
+				if (isset($row->content_parent)) {
+					$obj->parent = $row->content_parent;
+				}
+				
+				if ($noCount === false) {
+					$obj->children = $row->children_count;
+				}
+				
+				if (isset($row->content_meta)) {
+					$obj->meta = json_decode($row->content_meta);
+				}
+				
 				if (!$noTags) {
 					$obj->tags = self::getTags(array('id'=>$obj->id, 'noCount'=>true));
 				}
@@ -407,15 +437,19 @@ class Content {
 			$obj->parent = isset($obj->parent) ? $obj->parent : 0;
 			$obj->meta = isset($obj->meta) ? $obj->meta : null;
 			db_Connect();
-
+			
+			if ($obj->meta && !isset($vars['metaEncoded'])) {
+				$obj->meta = json_encode($obj->meta);
+			}
+			
 			if ($id !== null && $id > 0) {
 				// If there is an ID set, do an UPDATE
-				$query = 'UPDATE content SET content_title="' . db_Escape($obj->title) . '", content_perma="' . $obj->perma . '", content_body="' . db_Escape($obj->body) . '", content_date=' . intVal($obj->date) . ', content_meta="' . db_Escape(json_encode($obj->meta)) . '" WHERE content_id=' . $id;
+				$query = 'UPDATE content SET content_title="' . db_Escape($obj->title) . '", content_perma="' . $obj->perma . '", content_body="' . db_Escape($obj->body) . '", content_date=' . intVal($obj->date) . ', content_meta="' . db_Escape($obj->meta) . '" WHERE content_id=' . $id;
 				db_Query($query);
 			} else {
 				// Otherwise, do an INSERT
 				$query = 'INSERT INTO content (content_title, content_perma, content_body, content_date, content_type, content_parent, content_meta) VALUES ';
-				$query .= '("' . db_Escape($obj->title) . '", "' . db_Escape($obj->perma) . '", "' . db_Escape($obj->body) . '", ' . intVal($obj->date) . ', "' . db_Escape($obj->type) . '", ' . intVal($obj->parent) . ', "' . db_Escape(json_encode($obj->meta)) . '")';
+				$query .= '("' . db_Escape($obj->title) . '", "' . db_Escape($obj->perma) . '", "' . db_Escape($obj->body) . '", ' . intVal($obj->date) . ', "' . db_Escape($obj->type) . '", ' . intVal($obj->parent) . ', "' . db_Escape($obj->meta) . '")';
 				$id = $obj->id = db_Query($query);
 			}
 		
@@ -545,7 +579,7 @@ class Content {
 		}
 	}
 
-	private static function _syncTags($obj) {
+	private static function _syncTags($vars, $obj) {
 		
 		if (is_numeric($obj->id) && isset($obj->tags) && count($obj->tags) > 0) {
 			

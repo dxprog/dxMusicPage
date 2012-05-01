@@ -337,8 +337,7 @@
 			var data = $.parseJSON(xhr.responseText);
 			if (typeof(data.body.message) !== 'string') {
 				$info.removeClass('uploading').addClass('complete').html(data.body.title);
-				dx.call('content', 'getContent', {'contentType':'album', 'max':0}, loadAlbums);
-				dx.call('content', 'getContent', {'contentType':'song', 'max':0}, loadSongs);
+				dx.call('dxmp', 'getData', { 'noCache':'true' }, load.content);
 			} else {
 				$info.removeClass('uploading').addClass('error').append('<span>' + data.body.message + '</span>');
 			}
@@ -982,8 +981,9 @@
 	
 		content:function(d) {
 			var item = null;
-			for (var i = 0, count = d.body.content.length; i < count; i++) {
-				item = d.body.content[i];
+
+			for (var i = 0, count = d.body.length; i < count; i++) {
+				item = d.body[i];
 				if (data.hasOwnProperty(item.type + 's')) {
 					data[item.type + 's'].push(item);
 				}
@@ -1013,7 +1013,7 @@
 			$.cookie('userName', userName, { expires:90 });
 		}
 		
-		dx.call('content', 'getContent', {'max':0}, load.content);
+		dx.call('dxmp', 'getData', {}, load.content);
 		//dx.call('content', 'getContent', {'contentType':'song', 'max':0}, loadSongs);
 		//dx.call('content', 'getContent', {'contentType':'show', 'max':0}, loadShows);
 		player.setPlayer(playerType);

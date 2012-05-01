@@ -7,14 +7,40 @@ require('libs/id3lib.php');
 class DXMP extends Content {
 
 	private static $_awsLocation = 'http://dxmp.s3.amazonaws.com/';
-	private static $_localSongCache = '/var/www/_dxmp/songs';
-	private static $_localImageCache = '/var/www/dxmpv2/images';
+	private static $_localSongCache = '/var/www/dxmp/cache';
+	private static $_localImageCache = '/var/www/dxmp/images';
 	private static $_awsKey = 'AKIAI6QG5IZ7SYVCXPWA';
 	private static $_awsSecret = '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';
 	private static $_useAWS = true;
 	private static $_maxArtWidth = 600;
 	private static $_userTimeout = 300;
 	private static $_userArrayCacheKey = 'DXMP_Users';
+	
+	public static function getData($vars) {
+	
+		$cacheKey = 'dxmpContent';
+		$types = array('album', 'song', 'show', 'video');
+		$content = false;
+		
+		if (!isset($vars['noCache'])) {
+			$content = DxCache::Get($cacheKey);
+		}		
+		
+		if (!$content) {
+			$content = array();
+			foreach ($types as $type) {
+				$noTags = !($type == 'song');
+				$select = $type == 'song' || $type == 'video' ? 'title,parent,meta,type' : 'title,meta,type';
+				$noCount = $type == 'song' || $type == 'video' ? 'true' : null;
+				$temp = Content::getContent(array( 'contentType' => $type, 'max' => 0, 'noCount' => $noCount, 'select' => $select, 'noTags' => $noTags ));
+				$content = count($temp->content) > 0 ? array_merge($content, $temp->content) : $content;
+				DxCache::Set($cacheKey, $content, 2592000);
+			}
+		}
+
+		return $content;
+		
+	}
 	
 	/**
 	 * Registers a user in the cache so that commands may be sent
@@ -219,6 +245,7 @@ class DXMP extends Content {
 						$s3 = new S3(self::$_awsKey, self::$_awsSecret);
 						$data = $s3->inputFile($filePath);
 						$s3->putObject($data, 'dxmp', 'songs/' . $fileName, S3::ACL_PUBLIC_READ);
+						unlink($filePath); // Delete the original file
 					}
 				
 					$song = new Content();
