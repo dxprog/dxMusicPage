@@ -25,6 +25,8 @@ class SerializeXML {
 			
 		} elseif (is_bool($item)) {
 			$retVal .= false == $item ? 'false' : 'true';
+		} elseif (is_numeric($item)) {
+			$retVal .= $item;
 		} elseif (is_string($item)) {
 			$retVal .= '<![CDATA[' . mb_convert_encoding($item, 'UTF-8') . ']]>';
 		} else {
