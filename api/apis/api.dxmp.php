@@ -210,6 +210,9 @@ class DXMP extends Content {
 			
 			$song = Content::getContent(array('id'=>$id, 'noTags'=>true, 'noCount'=>true));
 			if (null != $song) {
+				if (isset($_COOKIE['userName'])) {
+					Content::logContentView(array( 'id' => $id, 'hitType' => 1, 'user' => $_COOKIE['userName']));
+				}
 				header('Location: ' . self::$_awsLocation . 'songs/' . $song->content[0]->meta->filename);
 				exit;
 			}

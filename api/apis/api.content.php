@@ -340,10 +340,11 @@ class Content {
 			$obj = null;
 			$ip = $_SERVER['REMOTE_ADDR'];
 			$id = intVal($vars['id']);
+			$type = isset($vars['hitType']) && is_numeric($vars['hitType']) ? $vars['hitType'] : 2;
 			$user = isset($vars['user']) ? $vars['user'] : 'anon';
 
 			db_Connect();
-			$query = 'INSERT INTO hits VALUES (' . $id . ', "' . $ip . '", ' . time() . ', "' . $user . '")';
+			$query = 'INSERT INTO hits VALUES (' . $id . ', "' . $ip . '", ' . time() . ', "' . $user . '", ' . $type . ')';
 			db_Query($query);
 			
 			
