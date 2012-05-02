@@ -244,9 +244,13 @@
 			}
 			return retVal;
 		},
+
+		songComplete = function() {
+			dx.call('content', 'logContentView', { 'id':list[currentSong], 'user':userName });
+			nextSong();
+		}
 		
 		nextSong = function() {
-			dx.call('content', 'logContentView', { 'id':list[currentSong], 'user':userName });
 			playing = false;
 			$playlist.find('li[album_id=' + currentSong + ']').removeClass('playing').addClass('played');
 			currentSong++;
@@ -268,7 +272,7 @@
 		
 		playSong = function(index) {
 			$playPause.attr('title', 'Pause Song').removeClass('play').addClass('pause');
-			player.playSong(list[index], nextSong, playProgress);
+			player.playSong(list[index], songComplete, playProgress);
 			playing = true;
 			$playlist.find('li[album_id=' + index + ']').addClass('playing');
 			display.songInfo(list[index]);
