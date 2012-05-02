@@ -49,6 +49,7 @@ class Stats {
 		$_maxDate = isset($vars['maxDate']) && is_numeric($vars['maxDate']) ? $vars['maxDate'] : time();
 		$_week = isset($vars['week']) && is_numeric($vars['week']) ? $vars['week'] : false;
 		$_year = isset($vars['year']) && is_numeric($vars['year']) ? $vars['year'] : false;
+		$_user = isset($vars['user']) ? $vars['user'] : false;
 		
 		if (false !== $_year && false !== $_week) {
 			
@@ -63,13 +64,15 @@ class Stats {
 			
 		}
 		
+		
 		$out = new stdClass();
 		$out->startDate = $_minDate;
 		$out->endDate = $_maxDate;
 		$out->songs = array();
 		
-		$query = 'SELECT t.content_id AS track_id, t.content_title AS track_title, a.content_title AS album_title, a.content_meta, COUNT(1) AS total FROM hits l INNER JOIN content t ON t.content_id = l.content_id INNER JOIN content a ON a.content_id = t.content_parent WHERE l.hit_date >= ' . $_minDate . ' AND l.hit_date <= ' . $_maxDate . ' GROUP BY l.content_id ORDER BY total DESC LIMIT ' . $_max;
 		db_Connect();
+		$_user = $_user ? ' AND l.hit_user = "' . db_Escape($_user) . '"' : '';
+		$query = 'SELECT t.content_id AS track_id, t.content_title AS track_title, a.content_title AS album_title, a.content_meta, COUNT(1) AS total FROM hits l INNER JOIN content t ON t.content_id = l.content_id INNER JOIN content a ON a.content_id = t.content_parent WHERE l.hit_date >= ' . $_minDate . ' AND l.hit_date <= ' . $_maxDate . $_user . ' GROUP BY l.content_id ORDER BY total DESC LIMIT ' . $_max;
 		$result = db_Query($query);
 		while ($row = db_Fetch($result)) {
 			
@@ -105,14 +108,14 @@ class Stats {
 
 		db_Connect();
 		
-		$query = 'SELECT (SELECT COUNT(1) FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ') / (SELECT COUNT(DISTINCT content_id) FROM hits WHERE hit_date >= ' . $_minDate .' AND hit_date <= ' . $_maxDate . ') AS AvgPlays';
-		$row = db_Fetch(db_Query($query));
-		$avgPlays = $row->AvgPlays != null ? $row->AvgPlays : 0;
-
 		$where = '';
 		if ($_user) {
 			$where = 'AND hit_user = "' . db_Escape($_user) . '" ';
 		}
+
+		$query = 'SELECT SUM(q.total) / COUNT(1) AS AvgPlays FROM (SELECT COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where .'GROUP BY content_id) AS q';
+		$row = db_Fetch(db_Query($query));
+		$avgPlays = $row->AvgPlays != null ? $row->AvgPlays : 0;
 
 		$result = db_Query('SELECT content_id, MIN(hit_date) AS first_play, COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where . 'GROUP BY content_id HAVING total >= ' . $avgPlays);
 		$weights = array();
