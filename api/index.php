@@ -29,6 +29,7 @@ $GLOBALS['_apiPath'] = './';
 
 // Include the important libraries
 require_once('./dx_api.php');
+require_once('./libs/dx_cache.php');
 require_once('./libs/dx_ser2.php');
 
 // Get the type, library and method off the query string
