@@ -7,7 +7,7 @@ class Stats {
 		if (isset($vars['user'])) {
 			db_Connect();
 			$minDate = isset($vars['minDate']) && is_numeric($vars['minDate']) ? $vars['minDate'] : strtotime('-30 days');
-			$result = db_Query('SELECT c.*, COUNT(1) AS total FROM hits h INNER JOIN content c ON c.content_id = h.content_id WHERE h.hit_user = "' . db_Escape($vars['user']) . '" AND h.hit_date >= ' . $minDate . ' GROUP BY h.content_id ORDER BY total DESC LIMIT 30');
+			$result = db_Query('SELECT c.*, COUNT(1) AS total FROM hits h INNER JOIN content c ON c.content_id = h.content_id WHERE h.hit_user = "' . db_Escape($vars['user']) . '" AND h.hit_date >= ' . $minDate . ' AND h.hit_type = 2 GROUP BY h.content_id ORDER BY total DESC LIMIT 30');
 			while ($row = db_Fetch($result)) {
 				$obj = new stdClass;
 				$obj->id = $row->content_id;
@@ -26,7 +26,7 @@ class Stats {
 		$retVal = false;
 		if ($id) {
 			db_Connect();
-			$result = db_Query('SELECT c.content_title AS title, COUNT(1) AS total, h.hit_user AS user FROM hits h INNER JOIN content c ON c.content_id = h.content_id WHERE h.content_id = ' . $id . ' GROUP BY h.hit_user ORDER BY total DESC');
+			$result = db_Query('SELECT c.content_title AS title, COUNT(1) AS total, h.hit_user AS user FROM hits h INNER JOIN content c ON c.content_id = h.content_id WHERE h.content_id = ' . $id . ' AND h.hit_type = 2 GROUP BY h.hit_user ORDER BY total DESC');
 			$retVal = array();
 			while ($row = db_Fetch($result)) {
 				$row->total = (int)$row->total;
@@ -72,7 +72,7 @@ class Stats {
 		
 		db_Connect();
 		$_user = $_user ? ' AND l.hit_user = "' . db_Escape($_user) . '"' : '';
-		$query = 'SELECT t.content_id AS track_id, t.content_title AS track_title, a.content_title AS album_title, a.content_meta, COUNT(1) AS total FROM hits l INNER JOIN content t ON t.content_id = l.content_id INNER JOIN content a ON a.content_id = t.content_parent WHERE l.hit_date >= ' . $_minDate . ' AND l.hit_date <= ' . $_maxDate . $_user . ' GROUP BY l.content_id ORDER BY total DESC LIMIT ' . $_max;
+		$query = 'SELECT t.content_id AS track_id, t.content_title AS track_title, a.content_title AS album_title, a.content_meta, COUNT(1) AS total FROM hits l INNER JOIN content t ON t.content_id = l.content_id INNER JOIN content a ON a.content_id = t.content_parent WHERE l.hit_date >= ' . $_minDate . ' AND l.hit_date <= ' . $_maxDate . $_user . ' AND l.hit_type = 2 GROUP BY l.content_id ORDER BY total DESC LIMIT ' . $_max;
 		$result = db_Query($query);
 		while ($row = db_Fetch($result)) {
 			
@@ -108,7 +108,7 @@ class Stats {
 
 		db_Connect();
 		
-		$where = '';
+		$where = 'AND hit_type = 2 ';
 		if ($_user) {
 			$where = 'AND hit_user = "' . db_Escape($_user) . '" ';
 		}
