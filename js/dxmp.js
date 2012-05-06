@@ -856,7 +856,14 @@
 			}
 			
 			$mainList.animate({left:"-298px"}, 200);
-			$songList.html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', songClick);
+			$songList
+				.html(out)
+				.animate({left:"0"}, 200)
+				.undelegate('li.song', 'click')
+				.undelegate('li.album', 'click')
+				.delegate('li.song', 'click', songClick)
+				.delegate('li.album', 'click', albumClick);
+				
 			$('#option h2').text('Search Results');			
 
 		} else {
@@ -1018,8 +1025,7 @@
 		}
 		
 		dx.call('dxmp', 'getData', {}, load.content);
-		//dx.call('content', 'getContent', {'contentType':'song', 'max':0}, loadSongs);
-		//dx.call('content', 'getContent', {'contentType':'show', 'max':0}, loadShows);
+
 		player.setPlayer(playerType);
 		if (playerType == 'vlc') {
 			$vlc.removeClass('disabled');
