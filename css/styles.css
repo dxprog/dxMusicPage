@@ -56,12 +56,13 @@ footer, header, section { display:block; }
 #videoList .navigation .show { color:#fff; font:bold 14px sans-serif; }
 #videoList .navigation .close { float:right; padding-right:20px; color:#fff; font:bold 14px sans-serif; cursor:pointer; }
 #videoList ul { list-style:none; position:absolute; top:40px; bottom:0; left:0; right:0; overflow:scroll; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
-#videoList li.show, #videoList li.episode { float:left; padding:20px; width:270px; height:140px; cursor:pointer; }
+#videoList li.show, #videoList li.episode { float:left; padding:20px; width:270px; height:140px; cursor:pointer; position:relative; }
 #videoList li.episode { height:auto; width:240px; }
+#videoList li.episode.watched { background:rgba(94, 224, 203, .5); }
 #videoList li.show:hover, #videoList li.episode:hover { background:rgba(200, 209, 83, .5); }
 #videoList li.episode p { font:14px PetitaBold; color:#fff; text-align:center; }
 #videoList li.show.art { height:140px; }
-#videoList li.show.art p { display:none; }
+#videoList li.show.art p { display:block; background:rgba(0, 0, 0, .5); position:absolute; bottom:25px; left:20px; right:20px; color:#fff; }
 #videoList li.show.art img { max-width:270px; max-height:140px; }
 #videoList li.show p { color:#fff; font:18px PetitaBold; text-align:center; }
 #videoList h3 { display:table-cell; text-align:center; vertical-align:middle; height:158px; width:240px; font:18px PetitaBold; color:#5ee0cb; }

@@ -22,6 +22,7 @@
 	player = new Player(),
 	artLocation = 'http://dxmp.s3.amazonaws.com/images/',
 	searchList = [],
+	watched = $.cookie('watched') || '',
 	
 	isMobile = (/(iphone|sonyericsson|blackberry|iemobile|windows ce|windows phone|nokia|samsung|android)/ig).test(window.navigator.userAgent),
 	
@@ -57,7 +58,7 @@
 		videoContent:'<div class="navigation"><span class="head">Shows &raquo; </span><span class="show"></span><span class="close">Close</span></div><ul>{items}</ul>',
 		showWithArt:'<li show_id="{id}" class="show art"><img src="thumb.php?file={art}&width=280&height=140" alt="{title}" /><p>{title}</p></li>',
 		show:'<li show_id="{id}" class="show"><p>{title}</p></li>',
-		episode:'<li episode_id="{id}" class="episode"><img src="thumb.php?file=screens/{thumb}&height=135&width=240" alt="episode thumbnail" /><p>{title}</p></li>',
+		episode:'<li episode_id="{id}" class="episode{watched}"><img src="thumb.php?file=screens/{thumb}&height=135&width=240" alt="episode thumbnail" /><p>{title}</p></li>',
 		season:'<li class="episode"><h3>{season}</h3></li>',
 		episodes:'<ul>{list}</ul>'
 
@@ -573,7 +574,8 @@
 			noSeason = [],
 			lastSeason = null,
 			list = '',
-			out = '';
+			out = '',
+			hasSeen = false;
 			
 			for (var i = 0, count = videos.length; i < count; i++) {
 				video = videos[i];
@@ -581,7 +583,8 @@
 					if (lastSeason != video.meta.season) {
 						list += templates.render('season', { season:'Season ' + video.meta.season });
 					}
-					list += templates.render('episode', { thumb:video.id + '_' + createPerma(video.title) + '_3.jpg', title:video.title, id:video.id, episode:video.meta.episode });
+					hasSeen = watched.indexOf(',' + video.id) > -1 ? ' watched' : '';
+					list += templates.render('episode', { thumb:video.id + '_' + createPerma(video.title) + '_3.jpg', title:video.title, id:video.id, episode:video.meta.episode, watched:hasSeen });
 					lastSeason = video.meta.season;
 				} else {
 					noSeason.push(video);
@@ -592,7 +595,8 @@
 				list += templates.render('season', { season:'Other Episodes' });
 				for (var i = 0, count = noSeason.length; i < count; i++) {
 					video = noSeason[i];
-					list += templates.render('episode', { thumb:video.id + '_' + createPerma(video.title) + '_3.jpg', title:video.title, id:video.id, episode:video.meta.episode });
+					hasSeen = watched.indexOf(',' + video.id) > -1 ? ' watched' : '';
+					list += templates.render('episode', { thumb:video.id + '_' + createPerma(video.title) + '_3.jpg', title:video.title, id:video.id, episode:video.meta.episode, watched:hasSeen });
 				}
 			}
 			
@@ -629,6 +633,10 @@
 				episode = data.getItemById(episodeId, 'videos');
 				show = data.getItemById(episode.parent, 'shows');
 				player.playVideo(episode, show);
+				if (watched.indexOf(',' + episodeId) === -1) {
+					watched += ',' + episodeId;
+					$.cookie('watched', watched, { expires:365});
+				}
 			}
 		}
 		
