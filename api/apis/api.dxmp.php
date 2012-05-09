@@ -42,6 +42,40 @@ class DXMP extends Content {
 		
 	}
 	
+	public static function buildSmartPlaylist($vars) {
+		
+		$retVal = false;
+		
+		$id = isset($vars['id']) && is_numeric($vars['id']) ? $vars['id'] : false;
+		if ($id) {
+			
+			$max = isset($vars['max']) && is_numeric($vars['max']) ? $vars['max'] : 25;
+			$tags = Content::getTags(array( 'id' => $id ));
+			if (count($tags) > 0) {
+				
+				$where = '';
+				foreach ($tags as $tag) {
+					$where .= ' OR tag_name = "' . $tag->name . '"';
+				}
+				$where = substr($where, 4, strlen($where));
+				
+				$query = 'SELECT content_id FROM tags WHERE (' . $where . ') AND content_id != ' . $id . ' GROUP BY content_id ORDER BY COUNT(1) + (RAND() * ' . (count($tags) * 2) . ') LIMIT ' . $max;
+				$result = db_Query($query);
+				if ($result->count > 0) {
+					$retVal = array();
+					while ($row = db_Fetch($result)) {
+						$retVal[] = $row->content_id;
+					}
+				}
+				
+			}
+			
+		}
+		
+		return $retVal;
+		
+	}
+	
 	/**
 	 * Registers a user in the cache so that commands may be sent
 	 */

@@ -28,6 +28,8 @@ footer, header, section { display:block; }
 .pause { width:40px; background-position:-48px 0; }
 .pause:hover { background-position:-48px -50px; }
 .random { width:26px; right:18px; position:absolute; top:0; background-position:-88px 0; }
+.smart { width:17px; right:60px; position:absolute; top:0; background-position:-160px -50px; }
+.smart:hover {background-position:-143px -50px; }
 .settings { width:26px; right:48px; position:absolute; top:0; background-position:-88px 0; }
 .random.enabled { background-position:-88px -50px; }
 .scrubBar { position:absolute; left:150px; right:150px; top:0; height:50px; background:url(images/scrub_bar.png) repeat-x; }
@@ -71,8 +73,8 @@ footer, header, section { display:block; }
 
 #secondaryList { left:298px; list-style-position:inside; counter-reset:track; }
 #secondaryList li { font:14px PetitaBold, 'Trebuchet MS', sans-serif; padding:5px; cursor:pointer; }
-#secondaryList li:hover { background:rgba(200, 209, 83, .5); }
 #secondaryList li:before { content:counter(track) ". "; counter-increment:track; }
+#secondaryList li:hover { background:rgba(200, 209, 83, .5); }
 #secondaryList li[song_id="all"]:before, #secondaryList li[song_id="back"]:before, #secondaryList li[song_id="disc"]:before, #secondaryList li.album:before, #secondaryList li.search:before { content:none; counter-reset:track; }
 #secondaryList li.search { padding-left:45px; }
 #secondaryList li.search strong { background:#ff0; }

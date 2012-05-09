@@ -561,6 +561,23 @@
 		}
 	}
 	
+	music = {
+	
+		smartPlaylistClick:function(e) {
+			var song = playlist.getPlayingSong();
+			if (null != song) {
+				dx.call('dxmp', 'buildSmartPlaylist', { id:song.id }, function(data) {
+					if (data.body.length > 0) {
+						for (var i = 0, count = data.body.length; i < count; i++) {
+							playlist.queueSong(data.body[i]);
+						}
+					}
+				});
+			}
+		}
+	
+	},
+	
 	// Video related shit
 	video = {
 		
@@ -1042,6 +1059,7 @@
 		$playPause.click(playPauseClick);
 		$('#random').click(randomClick);
 		$('#next').click(nextClick);
+		$('#smartPlaylist').click(music.smartPlaylistClick);
 		$('#option').click(optionClick);
 		$('#options li').click(optionsClick);
 		$('body').delegate('#videoList .close', 'click', video.closeClick);
