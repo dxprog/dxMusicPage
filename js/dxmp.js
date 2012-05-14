@@ -54,6 +54,7 @@
 		wallpaper:'<img src="{src}" class="wallpaper new" />',
 		songTags:'<li><span>{tag_name}</span></li>',
 		songAddTag:'<li><input type="text" id="addTag" /></li>',
+		songEditTag:'<li><input type="text" id="editTag" data-initial="{val}" value="{val}" /></li>',
 		videoPane:'<div id="videoList"></div>',
 		videoContent:'<div class="navigation"><span class="head">Shows &raquo; </span><span class="show"></span><span class="close">Close</span></div><ul>{items}</ul>',
 		showWithArt:'<li show_id="{id}" class="show art"><img src="thumb.php?file={art}&width=280&height=140" alt="{title}" /><p>{title}</p></li>',
@@ -523,31 +524,38 @@
 			var
 			$this = $(e.currentTarget),
 			text = $this.text();
-
-			if (text === '+') {
-				tags.add(e);
+			console.log(e.target.tagName);
+			if (e.target.tagName === 'SPAN') {
+				if (text === '+') {
+					tags.add($this);
+				} else {
+					tags.edit($this);			
+				}
 			} else {
-
+				e.stopPropagation();
 			}
 		},
-		add:function(e) {
-			var
-			$this = $(e.currentTarget),
-			$parent = $this.parents('ul:first');
+		add:function($this) {
+			var $parent = $this.parents('ul:first');
 
 			$this.html(templates.render('songAddTag'));
 			$parent.append(templates.render('songTags', {'tag_name':'+'}));
 			$this.find('input').keypress(tags.post);
 		},
+		edit:function($this) {
+			var val = $this.text();
+			$this.html(templates.render('songEditTag', { val:val })).find('input').keypress(tags.post);
+		},
 		post:function(e) {
 			var
 			$this = $(e.currentTarget),
+			initial = $this.attr('data-initial'),
 			tag = $this.val();
 			
 			if (e.keyCode == 13 && tag.length > 0) {
 				$this.attr('disabled', 'disabled');
 				$.ajax({
-					url:'/api/?type=json&method=content.syncTag&id=' + playlist.getPlayingSong().id,
+					url:'/api/?type=json&method=content.syncTag&id=' + playlist.getPlayingSong().id + '&initial=' + initial,
 					dataType:'json',
 					type:'POST',
 					data:{'tag':tag},

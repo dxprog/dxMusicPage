@@ -19,10 +19,14 @@ class DXMP extends Content {
 	public static function getData($vars) {
 	
 		$cacheKey = 'dxmpContent';
+		$cacheDateKey = 'dxmpContentDate';
+		$lastUpdate = DxCache::Get($cacheDateKey) ?: 0;
+		$contentUpdate = DxCache::Get(CACHE_CONTENT_UPDATE) ?: 1;
+
 		$types = array('album', 'song', 'show', 'video');
 		$content = false;
 		
-		if (!isset($vars['noCache'])) {
+		if (!isset($vars['noCache']) && $lastUpdate > $contentUpdate) {
 			$content = DxCache::Get($cacheKey);
 		}		
 		
@@ -35,6 +39,7 @@ class DXMP extends Content {
 				$temp = Content::getContent(array( 'contentType' => $type, 'max' => 0, 'noCount' => $noCount, 'select' => $select, 'noTags' => $noTags ));
 				$content = count($temp->content) > 0 ? array_merge($content, $temp->content) : $content;
 				DxCache::Set($cacheKey, $content, 2592000);
+				DxCache::Set($cacheDateKey, time());
 			}
 		}
 

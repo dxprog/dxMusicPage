@@ -9,6 +9,7 @@
 
 define('HITS_CACHE_THRESHOLD', 50);
 define('HITS_CACHE_TIMEOUT', 0);
+define('CACHE_CONTENT_UPDATE', 'ContentLastUpdated');
  
 class Content {
  
@@ -183,7 +184,7 @@ class Content {
 			if ($max > 0) {
 				 $query .= 'LIMIT ' . $offset . ', ' . $max;
 			}
-
+			
 			// Execute the query and lump the results into the outgoing object
 			$result = db_Query($query);
 			$retVal->content = array();
@@ -458,6 +459,10 @@ class Content {
 			if ($id !== true && isset($obj->tags)) {
 				self::_syncTags($vars, $obj);
 			}
+
+			// Update the content changed time for cache invalidation elsewhere
+			DxCache::Set(CACHE_CONTENT_UPDATE, time());
+
 		}
 	
 		$retVal = null;
@@ -572,12 +577,21 @@ class Content {
 		if ($id && $tag) {
 			db_Connect();
 			$tags = explode(',', $tag);
+
+			// Tag edit
+			$initial = isset($vars['initial']) ? db_Escape($vars['initial']) : false;
+			if ($initial) {
+				db_Query('DELETE FROM tags WHERE content_id = ' . $id . ' AND tag_name = "' . $initial . '"');
+			}
+
+			// Sync new tags
 			foreach ($tags as $tag) {
 				$tag = db_Escape(trim($tag));
 				db_Query('DELETE FROM tags WHERE content_id = ' . $id . ' AND tag_name = "' . $tag . '"');
 				db_Query('INSERT INTO tags VALUES (' . $id . ', "' . $tag . '")');
 			}
 		}
+		DxCache::Set(CACHE_CONTENT_UPDATE, time());
 	}
 
 	private static function _syncTags($vars, $obj) {
