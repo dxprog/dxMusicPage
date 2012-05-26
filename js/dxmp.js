@@ -305,7 +305,7 @@
 		$progress = $info.find('span'),
 		progWidth = $progress.width(),
 		boundary = '------DxmpFileUploadBoundary' + (new Date()).getTime(),
-		post = '--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + file.fileName + '"\r\nContent-Type: application/octet-stream\r\n\r\n',
+		post = '--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + (file.fileName || file.name) + '"\r\nContent-Type: application/octet-stream\r\n\r\n',
 		xhr = new XMLHttpRequest(),
 		reader = new FileReader(),
 		
@@ -367,7 +367,6 @@
 			$target = $(e.target),
 			files = e.dataTransfer.files,
 			albumId = null;
-			
 			$('.fader').fadeIn();
 			$('#uploads').slideDown();
 			
@@ -387,7 +386,7 @@
 							albumId = song.parent;
 						}
 					case 'audio/mp3':
-						$('#uploads ul').append('<li id="file' + files[i].size + '" class="uploading">' + files[i].fileName + '<span class="progress">0%</span></li>');
+						$('#uploads ul').append('<li id="file' + files[i].size + '" class="uploading">' + (files[i].fileName || files[i].name) + '<span class="progress">0%</span></li>');
 						upload(files[i], albumId);
 						break;
 					default:
