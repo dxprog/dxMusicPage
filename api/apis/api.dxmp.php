@@ -6,12 +6,8 @@ require('libs/id3lib.php');
 
 class DXMP extends Content {
 
-	private static $_awsLocation = 'http://dxmp.s3.amazonaws.com/';
 	private static $_localSongCache = '/var/www/dxmp/cache';
 	private static $_localImageCache = '/var/www/dxmp/images';
-	private static $_awsKey = 'AKIAI6QG5IZ7SYVCXPWA';
-	private static $_awsSecret = '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';
-	private static $_useAWS = true;
 	private static $_maxArtWidth = 600;
 	private static $_userTimeout = 300;
 	private static $_userArrayCacheKey = 'DXMP_Users';
@@ -252,7 +248,7 @@ class DXMP extends Content {
 				if (isset($_COOKIE['userName'])) {
 					Content::logContentView(array( 'id' => $id, 'hitType' => 1, 'user' => $_COOKIE['userName']));
 				}
-				header('Location: ' . self::$_awsLocation . 'songs/' . $song->content[0]->meta->filename);
+				header('Location: ' . AWS_LOCATION . 'songs/' . $song->content[0]->meta->filename);
 				exit;
 			}
 			
@@ -283,8 +279,8 @@ class DXMP extends Content {
 				if (strlen($id3->title) > 0) {
 				
 					// Upload to AWS
-					if (self::$_useAWS) {
-						$s3 = new S3(self::$_awsKey, self::$_awsSecret);
+					if (AWS_ENABLED) {
+						$s3 = new S3(AWS_KEY, AWS_SECRET);
 						$data = $s3->inputFile($filePath);
 						$s3->putObject($data, 'dxmp', 'songs/' . $fileName, S3::ACL_PUBLIC_READ);
 						unlink($filePath); // Delete the original file
@@ -380,7 +376,7 @@ class DXMP extends Content {
 						
 						// Upload to AWS
 						if (self::$_useAWS) {
-							$s3 = new S3(self::$_awsKey, self::$_awsSecret);
+							$s3 = new S3(AWS_KEY, AWS_SECRET);
 							$data = $s3->inputFile($filePath);
 							$s3->putObject($data, 'dxmp', 'images/' . $fileName, S3::ACL_PUBLIC_READ);
 						}
@@ -457,7 +453,7 @@ class DXMP extends Content {
 					
 					if ($id3->savePicture($filePath)) {
 						if (self::$_useAWS) {
-							$s3 = new S3(self::$_awsKey, self::$_awsSecret);
+							$s3 = new S3(AWS_KEY, AWS_SECRET);
 							$data = $s3->inputFile($filePath);
 							$s3->putObject($data, 'dxmp', 'images/' . $fileName, S3::ACL_PUBLIC_READ);
 						}
@@ -487,10 +483,10 @@ class DXMP extends Content {
 			$retVal = $row;
 			$retVal->images = json_decode($row->content_meta);
 			if (isset($retVal->images->art)) {
-				$retVal->images->art = self::$_awsLocation . 'images/' . $retVal->images->art;
+				$retVal->images->art = AWS_LOCATION . 'images/' . $retVal->images->art;
 			}
 			if (isset($retVal->images->wallpaper)) {
-				$retVal->images->wallpaper = self::$_awsLocation . 'images/' . $retVal->images->wallpaper;
+				$retVal->images->wallpaper = AWS_LOCATION . 'images/' . $retVal->images->wallpaper;
 			}
 			unset($retVal->content_meta);
 		}
