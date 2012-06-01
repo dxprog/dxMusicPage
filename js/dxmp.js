@@ -1,4 +1,6 @@
 (function($, undefined) {
+
+	'use strict';
 	
 	var
 	
@@ -35,8 +37,10 @@
 
 			if (typeof(retVal) === 'string') {
 				for (var i in vars) {
-					var regEx = new RegExp('\{' + i + '\}', 'g');
-					retVal = retVal.replace(regEx, vars[i]);
+					if (vars.hasOwnProperty(t)) {
+						var regEx = new RegExp('\{' + i + '\}', 'g');
+						retVal = retVal.replace(regEx, vars[i]);
+					}
 				}
 			} else {
 				retVal = null;
@@ -97,9 +101,11 @@
 		
 		getItemsByParentId:function(id, itemType) {
 			var retVal = [], item = null;
-			for (var i in this[itemType]) {
-				if (this[itemType][i].parent == id) {
-					retVal.push(this[itemType][i]);
+			for (var i in data[itemType]) {
+				if (data[itemType].hasOwnProperty(i)) {
+					if (data[itemType][i].parent === id) {
+						retVal.push(data[itemType][i]);
+					}
 				}
 			}
 			return retVal;
@@ -108,11 +114,13 @@
 		getItemById:function(id, itemType) {
 			var retVal = null;
 
-			for (var i in this[itemType]) {
-				var item = this[itemType][i];
-				if (item.id == id) {
-					retVal = item;
-					break;
+			for (var i in data[itemType]) {
+				if (data[itemType].hasOwnProperty(i)) {
+					var item = data[itemType][i];
+					if (item.id === id) {
+						retVal = item;
+						break;
+					}
 				}
 			}
 			
@@ -121,17 +129,21 @@
 		
 		getSongGenres:function() {
 			
-			var genres = {}, retVal = [];
+			var genres = {}, retVal = [], i = null;
 			
-			for (var i in this.songs) {
-				var song = songs[i];
-				if (null != song.meta && null != song.meta.genre) {
-					genres[song.meta] = true;
+			for (i in data.songs) {
+				if (data.songs.hasOwnProperty(i)) {
+					var song = data.songs[i];
+					if (null != song.meta && null != song.meta.genre) {
+						genres[song.meta] = true;
+					}
 				}
 			}
 			
-			for (var i in genres) {
-				retVal.push(i);
+			for (i in genres) {
+				if (genres.hasOwnProperty(i)) {
+					retVal.push(i);
+				}
 			}
 			
 			return retVal;
@@ -147,10 +159,12 @@
 				} else {
 					var tag = null;
 					for (var i in song.tags) {
-						tag = song.tags[i].name;
-						if ((tags.indexOf(tag) > -1 || tags.indexOf('all') === 0) && tags.indexOf('-' + tag) === -1) {
-							retVal = true;
-							break;
+						if (songs.tags.hasOwnProperty(i)) {
+							tag = song.tags[i].name;
+							if ((tags.indexOf(tag) > -1 || tags.indexOf('all') === 0) && tags.indexOf('-' + tag) === -1) {
+								retVal = true;
+								break;
+							}
 						}
 					}
 				}
@@ -219,7 +233,7 @@
 			out = templates.render('albumListItem', {id:list.length, art:art, title:song.title});
 			
 			// Recalculate the playlist time
-			if (parseInt(song.meta.duration) > 0) {
+			if (parseInt(song.meta.duration, 10) > 0) {
 				time += parseInt(song.meta.duration);
 				$('#playlistLength').html(helpers.niceTime(time));
 			}
@@ -250,7 +264,7 @@
 		songComplete = function() {
 			dx.call('content', 'logContentView', { 'id':list[currentSong], 'user':userName });
 			nextSong();
-		}
+		},
 		
 		nextSong = function() {
 			playing = false;
@@ -312,7 +326,7 @@
 		progress = function(e) {
 			var
 			percent = Math.round(e.loaded / e.total * 100),
-			msg = percent == 0 ? 'Waiting' : percent == 100 ? 'Syncing' : percent + '%';
+			msg = percent === 0 ? 'Waiting' : percent === 100 ? 'Syncing' : percent + '%';
 			$progress.html(msg).css('background-position', (Math.abs(percent - 100) / 100 * progWidth * -1) + 'px 0');
 		},
 		
@@ -322,7 +336,7 @@
 			var url = '';
 			switch (file.type) {
 				case 'audio/mp3':
-					url = '/api/?type=json&method=dxmp.postUploadSong'
+					url = '/api/?type=json&method=dxmp.postUploadSong';
 					break;
 				case 'image/jpg':
 				case 'image/jpeg':
@@ -370,7 +384,7 @@
 			$('.fader').fadeIn();
 			$('#uploads').slideDown();
 			
-			for (var i = 0, f; f = files[i]; i++) {
+			for (var i = 0, f; typeof (f = files[i]) !== 'undefined'; i++) {
 				switch (files[i].type) {
 					case 'image/jpg':
 					case 'image/jpeg':
@@ -422,8 +436,8 @@
 			s = Math.floor(e.position) % 60,
 			mLeft = Math.floor(left / 60),
 			sLeft = Math.floor(left) % 60;
-			s = s.toString().length == 1 ? '0' + s : s;
-			sLeft = sLeft.toString().length == 1 ? '0' + sLeft : sLeft;
+			s = s.toString().length === 1 ? '0' + s : s;
+			sLeft = sLeft.toString().length === 1 ? '0' + sLeft : sLeft;
 			$playHead.css('left', p + '%');
 			$playIn.text(m + ':' + s);
 			$playOut.text('-' + mLeft + ':' + sLeft);
@@ -437,7 +451,7 @@
 	
 	vlcClick = function(e) {
 		$vlc.toggleClass('disabled');
-		playerType = playerType == 'vlc' ? 'html5' : 'vlc';
+		playerType = playerType === 'vlc' ? 'html5' : 'vlc';
 		player.setPlayer(playerType);
 		$.cookie('player', playerType, {expires:90});
 	},
@@ -445,7 +459,7 @@
 	playPauseClick = function(e) {
 		player.pause();
 		var $this = $(e.target), status = player.getStatus();
-		if (status.state == 'playing') {
+		if (status.state === 'playing') {
 			$this.removeClass('play').addClass('pause');
 		} else {
 			$this.removeClass('pause').addClass('play');
@@ -509,8 +523,10 @@
 		var songs = data.getSongsByAlbumId(albumId), out = '<li song_id="back" class="song">Back</li><li song_id="all" class="song">Play All</li>';
 		
 		for (var i in songs) {
-			var song = songs[i];
-			out += '<li song_id="' + song.id + '" class="song">' + song.title + '</li>';
+			if (songs.hasOwnProperty(i)) {
+				var song = songs[i];
+				out += '<li song_id="' + song.id + '" class="song">' + song.title + '</li>';
+			}
 		}
 		
 		$mainList.animate({left:"-298px"}, 200);
@@ -551,7 +567,7 @@
 			initial = $this.attr('data-initial'),
 			tag = $this.val();
 			
-			if (e.keyCode == 13 && tag.length > 0) {
+			if (e.keyCode === 13 && tag.length > 0) {
 				$this.attr('disabled', 'disabled');
 				$.ajax({
 					url:'/api/?type=json&method=content.syncTag&id=' + playlist.getPlayingSong().id + '&initial=' + initial,
@@ -559,10 +575,10 @@
 					type:'POST',
 					data:{'tag':tag},
 					success:function(data) { 
-						$this.parents('li:first').html(tag);
+						$this.parents('li:first').html('<span>' + tag + '</span>');
 					}
 				});
-			} else if (e.keyCode == 27) {
+			} else if (e.keyCode === 27) {
 				$this.parents('li:first').remove();
 			}
 		}
@@ -923,7 +939,7 @@
 					
 					switch (item.name) {
 						case 'queue':
-							playlist.queueSong(parseInt(item.param));
+							playlist.queueSong(parseInt(item.param), 10);
 							break;
 						case 'force':
 							break;
