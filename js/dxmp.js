@@ -37,7 +37,7 @@
 
 			if (typeof(retVal) === 'string') {
 				for (var i in vars) {
-					if (vars.hasOwnProperty(t)) {
+					if (vars.hasOwnProperty(i)) {
 						var regEx = new RegExp('\{' + i + '\}', 'g');
 						retVal = retVal.replace(regEx, vars[i]);
 					}
@@ -159,7 +159,7 @@
 				} else {
 					var tag = null;
 					for (var i in song.tags) {
-						if (songs.tags.hasOwnProperty(i)) {
+						if (song.tags.hasOwnProperty(i)) {
 							tag = song.tags[i].name;
 							if ((tags.indexOf(tag) > -1 || tags.indexOf('all') === 0) && tags.indexOf('-' + tag) === -1) {
 								retVal = true;
@@ -385,16 +385,17 @@
 			$('#uploads').slideDown();
 			
 			for (var i = 0, f; typeof (f = files[i]) !== 'undefined'; i++) {
+				console.log(files[i]);
 				switch (files[i].type) {
 					case 'image/jpg':
 					case 'image/jpeg':
 					case 'image/gif':
 					case 'image/png':
-						if ($target.parents('li[album_id]')) {
+						if ($target.parents('li[album_id]').length > 0) {
 							albumId = $target.parents('li[album_id]').attr('album_id');
 						} else {
 							var song = playlist.getPlayingSong();
-							if (null == song || song.parent <= 0) {
+							if (null == song || song.parent <= 0 || song.parent == undefined) {
 								return;
 							}
 							albumId = song.parent;
@@ -539,7 +540,7 @@
 			var
 			$this = $(e.currentTarget),
 			text = $this.text();
-			console.log(e.target.tagName);
+
 			if (e.target.tagName === 'SPAN') {
 				if (text === '+') {
 					tags.add($this);
@@ -582,7 +583,7 @@
 				$this.parents('li:first').remove();
 			}
 		}
-	}
+	},
 	
 	music = {
 	
@@ -970,7 +971,7 @@
 			
 			// Sort the albums alphabetically
 			data.albums.sort(function(a, b) {
-				retVal = 0;
+				var retVal = 0;
 				if (null != a.title && null != b.title) {
 					var x = a.title.toLowerCase(), y = b.title.toLowerCase();
 					
@@ -1008,7 +1009,7 @@
 			
 			// Sort the albums alphabetically
 			data.shows.sort(function(a, b) {
-				retVal = 0;
+				var retVal = 0;
 				if (null != a.title && null != b.title) {
 					var x = a.title.toLowerCase(), y = b.title.toLowerCase();
 					
