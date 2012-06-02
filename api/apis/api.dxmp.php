@@ -6,7 +6,7 @@ require('libs/id3lib.php');
 
 class DXMP extends Content {
 
-	private static $_localSongCache = '/var/www/dxmp/cache';
+	private static $_localSongCache = '/var/www/dxmpv2/songs';
 	private static $_localImageCache = '/var/www/dxmp/images';
 	private static $_maxArtWidth = 600;
 	private static $_userTimeout = 300;
@@ -375,7 +375,7 @@ class DXMP extends Content {
 						rename($fileOldPath, $filePath);
 						
 						// Upload to AWS
-						if (self::$_useAWS) {
+						if (AWS_ENABLED) {
 							$s3 = new S3(AWS_KEY, AWS_SECRET);
 							$data = $s3->inputFile($filePath);
 							$s3->putObject($data, 'dxmp', 'images/' . $fileName, S3::ACL_PUBLIC_READ);
@@ -452,7 +452,7 @@ class DXMP extends Content {
 					$filePath = self::$_localImageCache . '/' . $fileName;
 					
 					if ($id3->savePicture($filePath)) {
-						if (self::$_useAWS) {
+						if (AWS_ENABLED) {
 							$s3 = new S3(AWS_KEY, AWS_SECRET);
 							$data = $s3->inputFile($filePath);
 							$s3->putObject($data, 'dxmp', 'images/' . $fileName, S3::ACL_PUBLIC_READ);
