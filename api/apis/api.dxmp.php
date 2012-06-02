@@ -60,7 +60,8 @@ class DXMP extends Content {
 				}
 				$where = substr($where, 4, strlen($where));
 				
-				$query = 'SELECT content_id FROM tags WHERE (' . $where . ') AND content_id != ' . $id . ' GROUP BY content_id ORDER BY COUNT(1) + (RAND() * ' . (count($tags) * 2) . ') LIMIT ' . $max;
+				$query = 'SELECT content_id FROM tags WHERE (' . $where . ') AND content_id != ' . $id . ' GROUP BY content_id ORDER BY COUNT(1) + (RAND() * ' . (count($tags) * 2) . ') DESC LIMIT ' . $max;
+				echo $query; exit;
 				$result = db_Query($query);
 				if ($result->count > 0) {
 					$retVal = array();
