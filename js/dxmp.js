@@ -860,7 +860,7 @@
 		var
 		val = $.trim($search.val()).toLowerCase(),
 		out = '',
-		list = val.length === 1 ? data.songs : val.length > 1 ? searchList : null,
+		list = val.length === 1 || searchList.length == 0 ? data.songs : val.length > 1 ? searchList : null,
 		newList = [],
 		lastAlbum = 0;
 		
@@ -894,7 +894,7 @@
 					lastAlbum = newList[i].parent;
 				}
 				var
-				find = new RegExp(val, 'gi');
+				find = new RegExp(val, 'gi'),
 				match = find.exec(newList[i].title),
 				title = newList[i].title.replace(match[0], '<strong>' + match[0] + '</strong>');
 				out += templates.render('searchItem', {'song_id':newList[i].id, 'title':title, 'track':newList[i].meta.track});
