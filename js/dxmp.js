@@ -310,12 +310,12 @@
 	
 	}()),
 	
-	upload = function(file, albumId) {
+	upload = function(file, contentId, uploadId) {
 		
 		// Ugh... we'll do this manually
 		var
 		
-		$info = $('#file' + file.size),
+		$info = $('#file' + uploadId),
 		$progress = $info.find('span'),
 		progWidth = $progress.width(),
 		boundary = '------DxmpFileUploadBoundary' + (new Date()).getTime(),
@@ -342,11 +342,11 @@
 				case 'image/jpeg':
 				case 'image/gif':
 				case 'image/png':
-					url = '/api/?type=json&method=dxmp.postImage&album=' + albumId;
+					url = '/api/?type=json&method=dxmp.postImage&id=' + contentId;
 					break;
 			}
 			
-			xhr.open('POST', url + '&id=' + file.size, true);
+			xhr.open('POST', url + '&upload=' + uploadId, true);
 			xhr.setRequestHeader('content-type', 'multipart/form-data; boundary=' + boundary);
 			xhr.upload.addEventListener('progress', progress);
 			xhr.send(post);
@@ -380,12 +380,13 @@
 			
 			$target = $(e.target),
 			files = e.dataTransfer.files,
-			albumId = null;
+			albumId = null,
+			uploadId = (new Date()).getTime();
 			$('.fader').fadeIn();
 			$('#uploads').slideDown();
 			
 			for (var i = 0, f; typeof (f = files[i]) !== 'undefined'; i++) {
-				console.log(files[i]);
+				uploadId += i;
 				switch (files[i].type) {
 					case 'image/jpg':
 					case 'image/jpeg':
@@ -401,8 +402,8 @@
 							albumId = song.parent;
 						}
 					case 'audio/mp3':
-						$('#uploads ul').append('<li id="file' + files[i].size + '" class="uploading">' + (files[i].fileName || files[i].name) + '<span class="progress">0%</span></li>');
-						upload(files[i], albumId);
+						$('#uploads ul').append('<li id="file' + uploadId + '" class="uploading">' + (files[i].fileName || files[i].name) + '<span class="progress">0%</span></li>');
+						upload(files[i], albumId, uploadId);
 						break;
 					default:
 						alert('Only MP3s and images can be uploaded');
