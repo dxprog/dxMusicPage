@@ -6,8 +6,6 @@ require('libs/id3lib.php');
 
 class DXMP extends Content {
 
-	private static $_localSongCache = '/var/www/dxmpv2/songs';
-	private static $_localImageCache = '/var/www/dxmp/images';
 	private static $_maxArtWidth = 600;
 	private static $_userTimeout = 300;
 	private static $_userArrayCacheKey = 'DXMP_Users';
@@ -61,7 +59,7 @@ class DXMP extends Content {
 				$where = substr($where, 4, strlen($where));
 				
 				$query = 'SELECT content_id FROM tags WHERE (' . $where . ') AND content_id != ' . $id . ' GROUP BY content_id ORDER BY COUNT(1) + (RAND() * ' . (count($tags) * 2) . ') DESC LIMIT ' . $max;
-				echo $query; exit;
+				
 				$result = db_Query($query);
 				if ($result->count > 0) {
 					$retVal = array();
@@ -261,13 +259,14 @@ class DXMP extends Content {
 		
 		$retVal = false;
 		
-		if (is_uploaded_file($_FILES['file']['tmp_name']) && isset($vars['id'])) {
+		$uploadId = isset($vars['upload']) && is_numeric($vars['upload']) ? $vars['upload'] : false;
+		
+		if (is_uploaded_file($_FILES['file']['tmp_name']) && $uploadId) {
 		
 			// Move the song over to the local directory
 			$fileName = parent::_createPerma(substr($_FILES['file']['name'], 0, strlen($_FILES['file']['name']) - 4)) . '.mp3';
-			$filePath = self::$_localSongCache . '/' . $fileName;
+			$filePath = LOCAL_CACHE_SONGS . '/' . $fileName;
 			$data = file_get_contents($_FILES['file']['tmp_name']);
-			$id = $vars['id'];
 			$file = fopen($filePath, 'wb');
 			if ($file) {
 				
@@ -300,18 +299,18 @@ class DXMP extends Content {
 					$song->meta->duration = $id3->length;
 					$song->meta->filename = $fileName;
 					$retVal = Content::syncContent(null, $song);
-					$retVal->content = $id;
+					$retVal->content = $uploadId;
 					
 				} else {
-					$retVal = array('id' => $id, 'message' => 'No ID3 tags');
+					$retVal = array('id' => $uploadId, 'message' => 'No ID3 tags');
 				}
 				
 			} else {
-				$retVal = array('id' => $id, 'message' => 'Unable to open destination file');
+				$retVal = array('id' => $uploadId, 'message' => 'Unable to open destination file: ' . $filePath);
 			}
 		
 		} else {
-			$retVal = array('id' => $id, 'message' => 'No file');
+			$retVal = array('id' => $uploadId, 'message' => 'No file');
 		}
 		
 		return $retVal;
@@ -325,21 +324,21 @@ class DXMP extends Content {
 		
 		$retVal = false;
 		
-		$album = isset($vars['album']) && is_numeric($vars['album']) ? $vars['album'] : false;
-		$id = $vars['id'];
+		$id = isset($vars['id']) && is_numeric($vars['id']) ? $vars['id'] : false;
+		$uploadId = $vars['upload'];
 		
 		if (is_uploaded_file($_FILES['file']['tmp_name']) && isset($vars['id']) && false !== $album) {
 		
 			// Get the name of the album
-			$album = Content::getContent(array('id'=>$album, 'contentType'=>'album'));
-			if (count($album->content) == 1) {
+			$content = Content::getContent(array( 'id' => $id ));
+			if (count($content->content) == 1) {
 				
-				$album = $album->content[0];				
+				$content = $content->content[0];				
 					
 				// Move the song over to the local directory
 				$ext = strtolower(end(explode('.', $_FILES['file']['name'])));
-				$fileName = $album->perma . '-tmp.' . $ext;
-				$filePath = self::$_localImageCache . '/' . $fileName;
+				$fileName = $content->perma . '-tmp.' . $ext;
+				$filePath = LOCAL_CACHE_IMAGES . '/' . $fileName;
 				$data = file_get_contents($_FILES['file']['tmp_name']);
 				$file = fopen($filePath, 'wb');
 				
@@ -370,9 +369,9 @@ class DXMP extends Content {
 						$type = imagesx($img) > self::$_maxArtWidth ? 'wallpaper' : 'art';
 						
 						// Rename the file taking into account the type
-						$fileName = $album->perma . '-' . $type . '.' . $ext;
+						$fileName = $content->perma . '-' . $content->type . '-' . $type . '.' . $ext;
 						$fileOldPath = $filePath;
-						$filePath = self::$_localImageCache . '/' . $fileName;
+						$filePath = LOCAL_CACHE_IMAGES . '/' . $fileName;
 						rename($fileOldPath, $filePath);
 						
 						// Upload to AWS
@@ -384,28 +383,28 @@ class DXMP extends Content {
 					
 						switch ($type) {
 							case 'wallpaper':
-								$album->meta->wallpaper = $fileName;
+								$content->meta->wallpaper = $fileName;
 								break;
 							case 'art':
-								$album->meta->art = $fileName;
+								$content->meta->art = $fileName;
 								break;
 						}
-						$retVal = Content::syncContent(null, $album);
+						$retVal = Content::syncContent(null, $content);
 						$retVal->title .= ' (' . $type . ')';
 						$retVal->content = $id;
 							
 					} else {
-						$retVal = array('id' => $id, 'message' => 'Invalid image');
+						$retVal = array('id' => $uploadId, 'message' => 'Invalid image');
 					}
 				} else {
-					$retVal = array('id' => $id, 'message' => 'Unable to open destination file (' . $filePath . ')');
+					$retVal = array('id' => $uploadId, 'message' => 'Unable to open destination file (' . $filePath . ')');
 				}
 			} else {
-				$retVal = array('id' => $id, 'message' => 'Invalid album ID');
+				$retVal = array('id' => $uploadId, 'message' => 'Invalid content ID');
 			}
 		
 		} else {
-			$retVal = array('id' => $id, 'message' => 'No file or invalid album');
+			$retVal = array('id' => $uploadId, 'message' => 'No file or invalid album');
 		}
 		
 		return $retVal;
@@ -449,8 +448,8 @@ class DXMP extends Content {
 			if ($album) {
 				$retVal = $album->id;
 				if (null !== $id3) {
-					$fileName = md5($album->perma . '-art') . '.jpg';
-					$filePath = self::$_localImageCache . '/' . $fileName;
+					$fileName = md5($album->perma . '-album-art') . '.jpg';
+					$filePath = LOCAL_CACHE_IMAGES . '/' . $fileName;
 					
 					if ($id3->savePicture($filePath)) {
 						if (AWS_ENABLED) {
