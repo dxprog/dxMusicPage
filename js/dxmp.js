@@ -304,9 +304,25 @@
 		
 		toggleInfinite = function() {
 			infinite = !infinite;
+		},
+		
+		save = function() {
+			
+			var name = prompt('Name of playlist');
+			if (name.length && list.length) {
+				var ids = [];
+				for (var i = 0, count = list.length; i < count; i++) {
+					ids.push(list[i]);
+				}
+				$.ajax({
+					url:'/api/?type=json&method=dxmp.savePlaylist&songs=' + escape(ids.join(',')) + '&name=' + escape(name),
+					type:'json'
+				});
+			}
+			
 		};
 		
-		return { queueSong:queueSong, nextSong:nextSong, toggleRandom:toggleRandom, toggleInfinite:toggleInfinite, getPlayingSong:getPlayingSong, changeTags:changeRandomTags };
+		return { queueSong:queueSong, nextSong:nextSong, toggleRandom:toggleRandom, toggleInfinite:toggleInfinite, getPlayingSong:getPlayingSong, changeTags:changeRandomTags, save:save };
 	
 	}()),
 	
@@ -510,6 +526,10 @@
 				break;
 		}
 		
+	},
+	
+	savePlaylistClick = function(e) {
+		playlist.save();
 	},
 	
 	albumClick = function(e) {
@@ -1087,6 +1107,7 @@
 		$('#smartPlaylist').click(music.smartPlaylistClick);
 		$('#option').click(optionClick);
 		$('#options li').click(optionsClick);
+		$('#savePlaylist').click(savePlaylistClick);
 		$('body').delegate('#videoList .close', 'click', video.closeClick);
 		$('body').delegate('#videoList .head', 'click', video.headClick);
 		$search.keyup(searchKeyEvent);

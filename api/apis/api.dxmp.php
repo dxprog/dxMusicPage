@@ -41,6 +41,17 @@ class DXMP extends Content {
 		
 	}
 	
+	public static function savePlaylist($vars) {
+		if (isset($vars['songs']) && isset($vars['name'])) {
+			$content = new Content();
+			$content->title = $vars['name'];
+			$content->body = $vars['body'];
+			$content->type = 'list';
+			return Content::syncContent(null, $content);
+		}
+		return false;
+	}
+	
 	public static function buildSmartPlaylist($vars) {
 		
 		$retVal = false;

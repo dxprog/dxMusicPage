@@ -42,6 +42,7 @@ footer, header, section { display:block; }
 #controls .time { color:#fff; font:14px sans-serif; position:absolute; top:17px; }
 #playIn { left:108px; }
 #playOut { right:108px; }
+#savePlaylist { display:block; width:10px; height:0; padding:10px 0 0; overflow:hidden; background:url(images/control_icons.png) no-repeat -157px -42px; position:absolute; left:106px; top:7px; cursor:pointer; }
 
 #lists { overflow:hidden; -webkit-overflow-scrolling: touch; }
 
