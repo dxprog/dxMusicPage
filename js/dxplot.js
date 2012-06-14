@@ -57,7 +57,7 @@
 			},
 			bars:function(data, min, max, index) {
 				var retVal = '';
-				console.log(data);
+
 				if (data.length > 0) {
 					for (var i = 0, count = data.length; i < count; i++) {
 						retVal += bar.bars(data[i], min, max, i);
