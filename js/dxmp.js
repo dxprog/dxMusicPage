@@ -315,8 +315,8 @@
 					ids.push(list[i]);
 				}
 				$.ajax({
-					url:'/api/?type=json&method=dxmp.savePlaylist&songs=' + escape(ids.join(',')) + '&name=' + escape(name),
-					type:'json'
+					url:'api/?type=json&method=dxmp.savePlaylist&songs=' + escape(ids.join(',')) + '&name=' + escape(name),
+					dataType:'json'
 				});
 			}
 			
@@ -530,6 +530,16 @@
 	
 	savePlaylistClick = function(e) {
 		playlist.save();
+	},
+	
+	playlistClick = function(e) {
+		var list = e.currentTarget.getAttribute('data-list');
+		if (list.length > 0) {
+			list = list.split(',');
+			for (var i = 0, count = list.length; i < count; i++) {
+				playlist.queueSong(list[i]);
+			}
+		}
 	},
 	
 	albumClick = function(e) {
@@ -811,6 +821,25 @@
 			
 		},
 		
+		playlists:function() {
+			dx.call('content', 'getContent', { contentType:'list' }, function(data) {
+				if ('content' in data.body && data.body.content.length > 0) {
+					var out = '';
+					$mainList.empty();
+					for (var i in data.body.content) {
+						if (data.body.content.hasOwnProperty(i)) {
+							var list = data.body.content[i];
+							if (list.body.length > 0) {
+								out += '<li data-list="' + list.body + '" class="song">' + list.title + '</li>';
+							}
+						}
+					}
+					$mainList.animate({left:"-298px"}, 200);
+					$songList.html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', playlistClick);
+				}
+			});
+		},
+		
 		trending:function() {
 			
 			$.ajax({
@@ -853,6 +882,10 @@
 				case 'my most played':
 					type = 'My Most Played';
 					this.userTracks();
+					break;
+				case 'playlists':
+					type = 'Playlists';
+					display.playlists();
 					break;
 				case 'shows':
 					type = 'Shows';

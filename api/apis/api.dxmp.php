@@ -45,7 +45,7 @@ class DXMP extends Content {
 		if (isset($vars['songs']) && isset($vars['name'])) {
 			$content = new Content();
 			$content->title = $vars['name'];
-			$content->body = $vars['body'];
+			$content->body = $vars['songs'];
 			$content->type = 'list';
 			return Content::syncContent(null, $content);
 		}
