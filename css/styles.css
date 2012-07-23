@@ -132,3 +132,8 @@ footer, header, section { display:block; }
 .dxPlot .group.items3 .barWrap:first-child { margin:0; }
 .dxPlot .group .label { position:absolute; bottom:-15px; display:block; width:100%; text-align:center; font:12px/12px sans-serif; text-transform:lowercase; color:#fff; }
 .dxPlot h1 { margin:0 0 10px; font:bold 14px/14px sans-serif; text-align:center; }
+
+#message { position:absolute; bottom:-45px; right:300px; background:#fff; padding:10px; display:table-cell; vertical-align:middle; overflow:hidden; }
+#message:hover { background:#5ee0cb; cursor:pointer; }
+#message img { float:left; padding-right:10px; }
+#message p { font:16px/1 sans-serif; }

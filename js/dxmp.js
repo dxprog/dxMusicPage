@@ -16,6 +16,7 @@
 	$nowPlaying = $('#nowPlaying'),
 	$vlc = $('#vlc'),
 	$search = $('#search'),
+	$message = $('#message'),
 	$videoList = null,
 	
 	// Various objects and variables
@@ -65,7 +66,8 @@
 		show:'<li show_id="{id}" class="show"><p>{title}</p></li>',
 		episode:'<li episode_id="{id}" class="episode{watched}"><img src="thumb.php?file=screens/{thumb}&height=135&width=240" alt="episode thumbnail" /><p>{title}</p></li>',
 		season:'<li class="episode"><h3>{season}</h3></li>',
-		episodes:'<ul>{list}</ul>'
+		episodes:'<ul>{list}</ul>',
+		msgUserPlay:'<img src="thumb.php?file={album_art}&width=50&height=50" /><p><strong>{user}</strong> is listening to <span class="song">{title}</span></p>'
 
 	},
 	
@@ -410,6 +412,8 @@
 					case 'image/png':
 						if ($target.parents('li[album_id]').length > 0) {
 							albumId = $target.parents('li[album_id]').attr('album_id');
+						} else if ($target.attr('show_id')) {
+							albumId = $target.attr('show_id');
 						} else {
 							var song = playlist.getPlayingSong();
 							if (null == song || song.parent <= 0 || song.parent == undefined) {
@@ -984,13 +988,28 @@
 		
 		var
 		
-		callback = function(data) {
+		msgClick = function(e) {
+			
+			switch (e.currentTarget.getAttribute('data-action')) {
+				case 'msg_user_play':
+					playlist.queueSong(e.currentTarget.getAttribute('song_id'));
+					break;
+			}
+			
+			e.stopPropagation();
+			
+		},
+		
+		callback = function(feedData) {
 			
 			setTimeout(checkForActions, 30000);
 			
-			if (data && data.body.length > 0) {
-				for (var i in data.body) {
-					var item = data.body[i];
+			if (feedData && feedData.body.length > 0) {
+				
+				var msgPlay = null;
+				
+				for (var i in feedData.body) {
+					var item = feedData.body[i];
 					
 					switch (item.name) {
 						case 'queue':
@@ -998,19 +1017,44 @@
 							break;
 						case 'force':
 							break;
+						case 'msg_user_play':
+							msgPlay = item;
+							break;
 					}
 					
 				}
+				
+				// We only need display the latest song play
+				if (msgPlay) {
+					var
+					
+					song = data.getItemById(item.param.songId, 'songs'),
+					album = data.getItemById(song.parent, 'albums'),
+					artwork = data.getAlbumArt(album);
+					
+					$message
+						.attr('data-action', 'msg_user_play')
+						.attr('song_id', song.id)
+						.html(templates.render('msgUserPlay', { album_art:artwork, user:item.param.user, title:song.title }))
+						.stop().animate({ bottom:0 }, 400);
+					
+					setTimeout(function() {
+						$message.stop().animate({ bottom:'-' + $message.outerHeight(true) + 'px' });
+					}, 6400);
+					
+				}
+				
 			}
 			
 		};
 		
 		if (!isMobile) {
 			$.ajax({
-				url:'api/?type=json&method=dxmp.getCurrentActions',
+				url:'api/?type=json&method=actions.getCurrentActions',
 				dataType:'jsonp',
 				success:callback
 			});
+			$('body').on('click', '#message', msgClick);
 		}
 	
 	},
@@ -1095,7 +1139,13 @@
 	
 		content:function(d) {
 			var item = null;
-
+			
+			// Blank any existing data
+			data.albums = [];
+			data.songs = [];
+			data.shows = [];
+			data.videos = [];
+			
 			for (var i = 0, count = d.body.length; i < count; i++) {
 				item = d.body[i];
 				if (data.hasOwnProperty(item.type + 's')) {
