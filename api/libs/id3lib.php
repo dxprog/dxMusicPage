@@ -158,6 +158,11 @@ class ID3Lib {
 			return false;		
 		}
 		
+		// If there was no title information, check for an ID3v1
+		if (strlen($this->title) == 0) {
+			$this->_readID3v1($file);
+		}
+
 		// Get the song length and bitrate information
 		$this->_calcLength($file, $hSize);
 		
