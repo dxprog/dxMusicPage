@@ -28,8 +28,8 @@ footer, header, section { display:block; }
 .pause { width:40px; background-position:-48px 0; }
 .pause:hover { background-position:-48px -50px; }
 .random { width:26px; right:18px; position:absolute; top:0; background-position:-88px 0; }
-.smart { width:17px; right:60px; position:absolute; top:0; background-position:-160px -50px; }
-.smart:hover {background-position:-143px -50px; }
+.smart { width:17px; right:60px; position:absolute; top:5px; background-position:-160px -55px; padding-top:45px; }
+.smart:hover {background-position:-143px -55px; }
 .settings { width:26px; right:48px; position:absolute; top:0; background-position:-88px 0; }
 .random.enabled { background-position:-88px -50px; }
 .scrubBar { position:absolute; left:150px; right:150px; top:0; height:50px; background:url(images/scrub_bar.png) repeat-x; }
