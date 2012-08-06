@@ -607,7 +607,7 @@ class Content {
 			$query = 'INSERT INTO tags VALUES ';
 			foreach	($obj->tags as $tag) {
 				if (is_object($tag)) {
-					$tag = $tag->name;
+					$tag = str_replace('-', ' ', self::_createPerma($tag->name));
 				}
 				$query .= '(' . $obj->id . ', "' . db_Escape($tag) . '"),';
 			}
