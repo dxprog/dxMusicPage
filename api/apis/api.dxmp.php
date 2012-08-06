@@ -1,6 +1,7 @@
 <?php
 
 require('apis/api.content.php');
+require('apis/api.actions.php');
 require('libs/S3.php');
 require('libs/id3lib.php');
 
@@ -8,7 +9,6 @@ class DXMP extends Content {
 
 	private static $_maxArtWidth = 600;
 	private static $_userTimeout = 300;
-	private static $_userArrayCacheKey = 'DXMP_Users';
 	
 	public static function getData($vars) {
 	
@@ -88,51 +88,6 @@ class DXMP extends Content {
 	}
 	
 	/**
-	 * Registers a user in the cache so that commands may be sent
-	 */
-	public static function registerUser() {
-		
-		if (isset($_SERVER['HTTP_USER_AGENT'])) {
-		
-			// Get the users array from cache
-			$users = DxCache::Get(self::$_userArrayCacheKey);
-			if (false === $users) {
-				$users = array();
-			}
-			
-			// Generate the ID for this user
-			$id = md5($_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT']);
-			
-			// Iterate through all the users to see if this one is already registered
-			$obj = false;
-			foreach ($users as &$user) {
-				if ($user->id === $id) {
-					$obj = $user;
-					$user->last_seen = time();
-					break;
-				}
-			}
-			
-			// If the user object was blank, create a new one
-			if (false === $obj) {
-				$obj = new stdClass();
-				$obj->id = $id;
-				$obj->ip = $_SERVER['REMOTE_ADDR'];
-				$obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
-				$obj->actions = array();
-				$obj->last_seen = time();
-				$users[] = $obj;
-			}
-			
-			// Update the users array and save back to cache
-			DxCache::Set(self::$_userArrayCacheKey, $users);
-			return $obj;
-			
-		}
-		
-	}
-	
-	/**
 	 * Returns the most played songs for a given time period
 	 */
 	function getMostPlayedAlbums($vars) {
@@ -183,68 +138,6 @@ class DXMP extends Content {
 	}
 	
 	/**
-	 * Sets an action for a user
-	 */
-	public static function setUserAction($vars) {
-	
-		$retVal = false;
-	
-		// Validate the ID
-		if (preg_match('/[a-f0-9]{32}/', $vars['id']) && isset($vars['action'])) {
-		
-			$users = self::_getUserArray();
-			
-			// Find the user in question and add the action to the queue
-			foreach ($users as &$user) {
-				if ($user->id === $vars['id']) {
-					$action = new stdClass();
-					$action->name = $vars['action'];
-					$action->param = isset($vars['param']) ? $vars['param'] : null;
-					$action->timestamp = time();
-					$user->actions[] = $action;
-					$retVal = true;
-					DxCache::Set(self::$_userArrayCacheKey, $users);
-					break;
-				}
-			}
-			
-		}
-		
-		return $retVal;
-	
-	}
-	
-	/**
-	 * Gets a list of waiting actions for the current user
-	 */
-	public static function getCurrentActions($vars) {
-		
-		$id = md5($_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT']);
-		$retVal = false;
-		$users = self::_getUserArray();
-		foreach ($users as &$user) {
-			if ($user->id === $id) {
-				$retVal = $user->actions;
-				$user->actions = array();
-				break;
-			}
-		}
-		
-		// Update the cache
-		DxCache::Set(self::$_userArrayCacheKey, $users);
-		
-		return $retVal;
-		
-	}
-	
-	/**
-	 * Returns all the currently active users
-	 */
-	public static function getActiveUsers() {
-		return self::_getUserArray();
-	}
-	
-	/**
 	 * Returns the location of the track
 	 */
 	public static function getTrackFile($vars) {
@@ -257,6 +150,13 @@ class DXMP extends Content {
 			if (null != $song) {
 				if (isset($_COOKIE['userName'])) {
 					Content::logContentView(array( 'id' => $id, 'hitType' => 1, 'user' => $_COOKIE['userName']));
+					
+					// Send a global action to all other users about this play
+					$action = new stdClass;
+					$action->songId = $id;
+					$action->user = $_COOKIE['userName'];
+					Actions::setGlobalAction(array( 'action'=>'msg_user_play', 'param'=>$action ));
+					
 				}
 				header('Location: ' . AWS_LOCATION . 'songs/' . $song->content[0]->meta->filename);
 				exit;
@@ -266,6 +166,9 @@ class DXMP extends Content {
 	
 	}
 	
+	/**
+	 * Uploads a song, distributes to CDN, and creates entry in the database
+	 */
 	public static function postUploadSong($vars, $obj) {
 		
 		$retVal = false;
@@ -298,19 +201,24 @@ class DXMP extends Content {
 					}
 				
 					$song = new Content();
-					$song->title = strlen($id3->title) > 0 ? $id3->title : $fileName;
-					$song->type = 'song';
-					$song->date = time();
 					$song->parent = self::_getAlbumId($id3->album, $id3);
-					$song->meta = new stdClass();
-					$song->meta->track = $id3->track;
-					$song->meta->disc = $id3->disc;
-					$song->meta->year = $id3->year;
-					$song->meta->genre = $id3->genre;
-					$song->meta->duration = $id3->length;
-					$song->meta->filename = $fileName;
-					$retVal = Content::syncContent(null, $song);
-					$retVal->content = $uploadId;
+					if ($song->parent !== false) {
+						$song->title = strlen($id3->title) > 0 ? $id3->title : $fileName;
+						$song->type = 'song';
+						$song->date = time();
+						$song->meta = new stdClass();
+						$song->meta->track = $id3->track;
+						$song->meta->disc = $id3->disc;
+						$song->meta->year = $id3->year;
+						$song->meta->genre = $id3->genre;
+						$song->meta->duration = $id3->length;
+						$song->meta->filename = $fileName;
+						$retVal = Content::syncContent(null, $song);
+						$retVal->content = $uploadId;
+						Actions::setGlobalAction(array( 'action'=>'msg_new_song' ));
+					} else {
+						$retVal = array('id' => $uploadId, 'message' => 'Invalid album title');
+					}
 					
 				} else {
 					$retVal = array('id' => $uploadId, 'message' => 'No ID3 tags');
@@ -338,7 +246,7 @@ class DXMP extends Content {
 		$id = isset($vars['id']) && is_numeric($vars['id']) ? $vars['id'] : false;
 		$uploadId = $vars['upload'];
 		
-		if (is_uploaded_file($_FILES['file']['tmp_name']) && isset($vars['id']) && false !== $album) {
+		if (is_uploaded_file($_FILES['file']['tmp_name']) && isset($vars['id'])) {
 		
 			// Get the name of the album
 			$content = Content::getContent(array( 'id' => $id ));
@@ -451,7 +359,7 @@ class DXMP extends Content {
 		$album = Content::getContent(array('title' => $title, 'contentType' => 'album'));
 		if ($album->count > 0) {
 			$retVal = $album->content[0]->id;
-		} else {
+		} else if (strlen(trim($title)) > 0) {
 			$album = new Content();
 			$album->title = $title;
 			$album->type = 'album';
@@ -511,15 +419,5 @@ class DXMP extends Content {
 	private static function _trendSort($a, $b) {
 		return $a->weight < $b->weight ? -1 : $a->weight == $b->weight ? 0 : 1;
 	}
-
-	/**
-	 * Gets the cached users array or creates a new one if none exists
-	 */
-	private static function _getUserArray() {
-		$retVal = DxCache::Get(self::$_userArrayCacheKey);
-		return false === $retVal ? array() : $retVal;
-	}
 	
 }
-
-DXMP::registerUser();
