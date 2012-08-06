@@ -32,6 +32,7 @@ footer, header, section { display:block; }
 .smart:hover {background-position:-143px -55px; }
 .settings { width:26px; right:48px; position:absolute; top:0; background-position:-88px 0; }
 .random.enabled { background-position:-88px -50px; }
+.randomSettings { display:block; position:absolute; background:url(images/drop_arrow.png) no-repeat center center; width:9px; right:5px; top:0; }
 .scrubBar { position:absolute; left:150px; right:150px; top:0; height:50px; background:url(images/scrub_bar.png) repeat-x; }
 .playHead { position:absolute; left:0; top:0; width:8px; background-position:-40px 0; }
 .playHead:hover { background-position:-40px -50px; }
@@ -48,7 +49,7 @@ footer, header, section { display:block; }
 
 .list { list-style:none; overflow:scroll; overflow-x:hidden; top:25px; bottom:0; position:absolute; width:100%; }
 #mainList li, #secondaryList .album li, #playlist li { padding:5px; position:relative; height:35px; cursor:pointer; }
-#mainList li:hover, #secondaryList .album li:hover, #playlist li:hover { background:rgba(200, 209, 83, .5); }
+#mainList li:hover, #secondaryList .album li:hover, #playlist li:hover, #tagList li:hover { background:rgba(200, 209, 83, .5); }
 #mainList p, #secondaryList .album p, #playlist p { font:18px PetitaBold, 'Trebuchet MS', sans-serif; padding:6px 0 0 41px; text-overflow:ellipsis; width:225px; white-space:nowrap; overflow:hidden; }
 #mainList img, #secondaryList .album img, #playlist img { max-width:35px; max-height:35px; position:absolute; left:5px; }
 
@@ -137,3 +138,11 @@ footer, header, section { display:block; }
 #message:hover { background:#5ee0cb; cursor:pointer; }
 #message img { float:left; padding-right:10px; }
 #message p { font:16px/1 sans-serif; }
+
+#tagList { right:0; display:none; overflow:scroll; overflow-x:hidden; background:#fff; }
+#tagList li {  padding:5px; position:relative; cursor:pointer; font:18px/1 PetitaBold, 'Trebuchet MS', sans-serif; postion:relative; }
+#tagList span { position:absolute; background:#bbb; display:block; width:16px; padding:4px 0 1px; text-align:center; border-radius:8px; font-size:12px; top:6px; }
+#tagList .remove { right:10px; }
+#tagList .remove:hover, #tagList .remove.selected { background:#ff8383; }
+#tagList .add { right:31px; }
+#tagList .add:hover, #tagList .add.selected { background:#5ee0cb; }

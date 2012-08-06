@@ -18,6 +18,7 @@
 	$search = $('#search'),
 	$message = $('#message'),
 	$videoList = null,
+	$tagList = $('#tagList'),
 	
 	// Various objects and variables
 	playerType = $.cookie('player') || 'html5',
@@ -26,6 +27,7 @@
 	artLocation = 'http://dxmp.s3.amazonaws.com/images/',
 	searchList = [],
 	watched = $.cookie('watched') || '',
+	actionTimer = null,
 	
 	isMobile = (/(iphone|sonyericsson|blackberry|iemobile|windows ce|windows phone|nokia|samsung|android)/ig).test(window.navigator.userAgent),
 	
@@ -67,7 +69,8 @@
 		episode:'<li episode_id="{id}" class="episode{watched}"><img src="thumb.php?file=screens/{thumb}&height=135&width=240" alt="episode thumbnail" /><p>{title}</p></li>',
 		season:'<li class="episode"><h3>{season}</h3></li>',
 		episodes:'<ul>{list}</ul>',
-		msgUserPlay:'<img src="thumb.php?file={album_art}&width=50&height=50" /><p><strong>{user}</strong> is listening to <span class="song">{title}</span></p>'
+		msgUserPlay:'<img src="thumb.php?file={album_art}&width=50&height=50" /><p><strong>{user}</strong> is listening to <span class="song">{title}</span></p>',
+		tagListItem:'<li data-tag="{tag_name}">{tag_name}<span class="add">+</span><span class="remove">-</span></li>'
 
 	},
 	
@@ -88,6 +91,7 @@
 		songs:[],
 		shows:[],
 		videos:[],
+		tags:[],
 		
 		defaultAlbum:{
 			id:null,
@@ -153,19 +157,21 @@
 		},
 		
 		checkSongForTags:function(song, tags) {
-			var retVal = false;
+			var retVal = false, tag = null;
 			
 			if (typeof(song) === 'object' && null != song && ((typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) || tags.indexOf('all') === 0)) {
 				if (!(typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) && tags.indexOf('all') === 0) {
 					retVal = true;
 				} else {
-					var tag = null;
-					for (var i in song.tags) {
-						if (song.tags.hasOwnProperty(i)) {
-							tag = song.tags[i].name;
-							if ((tags.indexOf(tag) > -1 || tags.indexOf('all') === 0) && tags.indexOf('-' + tag) === -1) {
-								retVal = true;
+					for (var i = 0, count = song.tags.length; i < count; i++) {
+						tag = song.tags[i].name;
+
+						if (tags.indexOf(',' + tag + ',') > -1) {
+							if (tags.indexOf(',-' + tag + ',') !== -1) {
+								retVal = false;
 								break;
+							} else {
+								retVal = true;
 							}
 						}
 					}
@@ -181,6 +187,17 @@
 				retVal = album.meta.art;
 			}
 			return retVal;
+		},
+
+		populateTags:function() {
+			for (var i = 0, count = data.songs.length; i < count; i++) {
+				for (var j = 0, tagCount = data.songs[i].tags.length; j < tagCount; j++) {
+					if ($.inArray(data.songs[i].tags[j].name, data.tags) === -1) {
+						data.tags.push(data.songs[i].tags[j].name);
+					}
+				}
+			}
+			data.tags.sort();
 		}
 	
 	},
@@ -224,8 +241,8 @@
 		random = false,
 		time = 0,
 		randomAll = false,
-		randomTags = '',
 		songs = [],
+		tags = [],
 		
 		queueSong = function(id) {
 			var
@@ -250,12 +267,13 @@
 		},
 		
 		getEligibleSongs = function() {
-			var retVal = [];
-			if (randomAll) {
+			var retVal = [], randomTags = tags.join(',');
+			$.cookie('random_tags', randomTags, { expires:90 });
+			if (randomAll || randomTags == null || randomTags.length == 0) {
 				retVal = data.songs;
 			} else {
 				for (var i in data.songs) {
-					if (data.checkSongForTags(data.songs[i], randomTags)) {
+					if (data.checkSongForTags(data.songs[i], ',' + randomTags + ',')) {
 						retVal.push(data.songs[i]);
 					}
 				}
@@ -275,16 +293,46 @@
 			if (currentSong + 1 <= list.length) {
 				playSong(currentSong);
 			} else if (random) {
-				var rand = Math.floor(Math.random() * songs.length);
-				while (typeof(songs[rand]) === 'undefined' || null == songs[rand].meta) {
-					rand = Math.floor(Math.random() * songs.length);
+				if (songs.length > 0) {
+					var rand = Math.floor(Math.random() * songs.length);
+					while (typeof(songs[rand]) === 'undefined' || null == songs[rand].meta) {
+						rand = Math.floor(Math.random() * songs.length);
+					}
+					queueSong(songs[rand].id);
 				}
-				queueSong(songs[rand].id);
 			}
 		},
 		
-		changeRandomTags = function(tags) {
-			randomTags = tags;
+		excludeTag = function(tag) {
+			var index = tags.indexOf(tag) === -1 ? tags.indexOf('-' + tag) : tags.indexOf(tag);
+			if (index === -1) {
+				tags.push('-' + tag);
+			} else {
+				tags[index] = '-' + tag;
+			}
+			songs = getEligibleSongs();
+		},
+
+		includeTag = function(tag) {
+			var index = tags.indexOf(tag) === -1 ? tags.indexOf('-' + tag) : tags.indexOf(tag);
+			if (index === -1) {
+				tags.push(tag);
+			} else {
+				tags[index] = tag;
+			}
+			songs = getEligibleSongs();
+		},
+
+		removeTag = function(tag) {
+			var index = tags.indexOf(tag);
+			if (index !== -1) {
+				tags.splice(index, 1);
+			}
+
+			index = tags.indexOf('-' + tag);
+			if (index !== -1) {
+				tags.splice(index, 1);
+			}
 			songs = getEligibleSongs();
 		},
 		
@@ -322,9 +370,30 @@
 				});
 			}
 			
+		},
+
+		init = function() {
+			var tagCookie = $.cookie('random_tags');
+			if (null != tagCookie && tagCookie.length > 0) {
+				tags = tagCookie.split(',');
+				songs = getEligibleSongs();
+			} else {
+				songs = data.songs;
+			}
 		};
 		
-		return { queueSong:queueSong, nextSong:nextSong, toggleRandom:toggleRandom, toggleInfinite:toggleInfinite, getPlayingSong:getPlayingSong, changeTags:changeRandomTags, save:save };
+		return { 
+			queueSong:queueSong, 
+			nextSong:nextSong, 
+			toggleRandom:toggleRandom, 
+			toggleInfinite:toggleInfinite, 
+			getPlayingSong:getPlayingSong, 
+			excludeTag:excludeTag, 
+			includeTag:includeTag, 
+			removeTag:removeTag,
+			save:save,
+			init:init
+		};
 	
 	}()),
 	
@@ -617,6 +686,57 @@
 			} else if (e.keyCode === 27) {
 				$this.parents('li:first').remove();
 			}
+		},
+		load:function() {
+			var
+			out = '<li data-tag="done">Done<span class="remove">&times;</span></li>',
+			cookieTags = $.cookie('random_tags');
+			data.populateTags();
+			for (var i = 0, count = data.tags.length; i < count; i++) {
+				out += templates.render('tagListItem', { tag_name:data.tags[i] });
+			}
+			$tagList.html(out);
+			$('#randomSettings').on('click', tags.listClick);
+			$tagList.on('click', 'span', tags.changeTags);
+
+			if (null != cookieTags && cookieTags.length > 0) {
+				cookieTags = cookieTags.split(',');
+				for (var i = 0, count = cookieTags.length; i < count; i++) {
+					if (cookieTags[i].substr(0, 1) == '-') {
+						$tagList.find('[data-tag="' + cookieTags[i].substr(1) + '"] .remove').addClass('selected');
+					} else {
+						$tagList.find('[data-tag="' + cookieTags[i] + '"] .add').addClass('selected');
+					}
+				}
+			}
+
+		},
+		listClick:function() {
+			$tagList.fadeIn();
+		},
+		changeTags:function(e) {
+			var 
+			$target = $(e.currentTarget),
+			$parent = $target.parent(),
+			tag = $parent.attr('data-tag');
+
+			if (tag !== 'done') {
+				if (!$target.hasClass('selected')) {
+					$parent.find('.selected').removeClass('selected');
+					if ($target.hasClass('add')) {
+						playlist.includeTag(tag);
+					} else {
+						playlist.excludeTag(tag);
+					}
+					$target.addClass('selected');
+				} else {
+					playlist.removeTag(tag);
+					$target.removeClass('selected');
+				}
+			} else {
+				$tagList.fadeOut();
+			}
+
 		}
 	},
 	
@@ -771,7 +891,7 @@
 		},
 		
 		songInfo:function(songId) {
-			
+			console.log(songId);
 			var
 			song = data.getItemById(songId, 'songs'),
 			album = data.getItemById(song.parent, 'albums'),
@@ -982,27 +1102,25 @@
 		$songList.html(out);
 	
 	},
-	
+
 	// Checks for new user actions
-	checkForActions = function() {
+	actions = {
 		
-		var
+		timer:null,
 		
-		msgClick = function(e) {
-			
+		msgClick:function(e) {
 			switch (e.currentTarget.getAttribute('data-action')) {
 				case 'msg_user_play':
 					playlist.queueSong(e.currentTarget.getAttribute('song_id'));
 					break;
 			}
-			
 			e.stopPropagation();
-			
 		},
 		
-		callback = function(feedData) {
+		ajaxCallback:function(feedData) {
 			
-			setTimeout(checkForActions, 30000);
+			clearTimeout(actions.timer);
+			actions.timer = setTimeout(actions.timerCallback, 30000);
 			
 			if (feedData && feedData.body.length > 0) {
 				
@@ -1015,7 +1133,13 @@
 						case 'queue':
 							playlist.queueSong(parseInt(item.param), 10);
 							break;
-						case 'force':
+						case 'msg_new_song':
+							$message
+								.attr('data-action', 'msg_new_song')
+								.html('<p>A new song has been added!</p>')
+								.stop().animate({ bottom:0 }, 400);
+						case 'refresh':
+							dx.call('dxmp', 'getData', {}, load.content);
 							break;
 						case 'msg_user_play':
 							msgPlay = item;
@@ -1046,17 +1170,22 @@
 				
 			}
 			
-		};
+		},
 		
-		if (!isMobile) {
-			$.ajax({
-				url:'api/?type=json&method=actions.getCurrentActions',
-				dataType:'jsonp',
-				success:callback
-			});
-			$('body').on('click', '#message', msgClick);
+		timerCallback:function() {
+			if (!isMobile) {
+				$.ajax({
+					url:'api/?type=json&method=actions.getCurrentActions',
+					dataType:'jsonp',
+					success:actions.ajaxCallback
+				});
+			}
+		},
+		
+		init:function() {
+			$('body').on('click', '#message', actions.msgClick);
+			actions.timerCallback();
 		}
-	
 	},
 	
 	// Data loaders/initializers
@@ -1099,7 +1228,7 @@
 				j = parseInt(b.meta.disc); // Disc #2
 				return (i < j) ? -1 : (i == j) ? (x < y) ? -1 : (x == y) ? 0 : 1 : 1;
 			});
-			playlist.changeTags('all,-christmas,-azumanga daioh');
+			playlist.init();
 			
 		},
 	
@@ -1158,6 +1287,7 @@
 			load.songs();
 			load.shows();
 			load.videos();
+			tags.load();
 			
 			if (window.location.hash) {
 				playlist.queueSong(window.location.hash.replace('#', ''));
@@ -1166,7 +1296,7 @@
 			// Display whatever list needs to be displayed
 			var list = $.cookie('list');
 			display.listByType(list);
-			checkForActions();
+			
 		}
 	},
 	
@@ -1197,6 +1327,7 @@
 		$vlc.click(vlcClick);
 		drag.init();
 		$('#settings').click(data.getSongGenres);
+		actions.init();
 		
 	};
 	
