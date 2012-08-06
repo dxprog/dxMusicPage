@@ -165,14 +165,11 @@
 				} else {
 					for (var i = 0, count = song.tags.length; i < count; i++) {
 						tag = song.tags[i].name;
-
-						if (tags.indexOf(',' + tag + ',') > -1) {
-							if (tags.indexOf(',-' + tag + ',') !== -1) {
-								retVal = false;
-								break;
-							} else {
-								retVal = true;
-							}
+						if (tags.indexOf(',' + tag + ',') > -1) {	
+							retVal = true;
+						} else if (tags.indexOf(',-' + tag + ',') !== -1) {
+							retVal = false;
+							break;
 						}
 					}
 				}
