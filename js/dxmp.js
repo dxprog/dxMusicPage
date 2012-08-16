@@ -165,11 +165,14 @@
 				} else {
 					for (var i = 0, count = song.tags.length; i < count; i++) {
 						tag = song.tags[i].name;
-						if (tags.indexOf(',' + tag + ',') > -1) {	
-							retVal = true;
-						} else if (tags.indexOf(',-' + tag + ',') !== -1) {
-							retVal = false;
-							break;
+
+						if (tags.indexOf(',' + tag + ',') > -1) {
+							if (tags.indexOf(',-' + tag + ',') !== -1) {
+								retVal = false;
+								break;
+							} else {
+								retVal = true;
+							}
 						}
 					}
 				}
@@ -589,6 +592,14 @@
 				$songList.animate({left:"298px"}, 200);
 				break;
 			case 'all':
+				var
+				album_id = $this.parents('ol:first').attr('album_id'),
+				songs = data.getSongsByAlbumId(album_id);
+				
+				for (var i = 0, count = songs.length; i < count; i++) {
+					playlist.queueSong(songs[i].id);
+				}
+				
 				break;
 			default:
 				// player.playSong(songId, function(){}, playProgress);
