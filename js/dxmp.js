@@ -165,19 +165,15 @@
 				} else {
 					for (var i = 0, count = song.tags.length; i < count; i++) {
 						tag = song.tags[i].name;
-
 						if (tags.indexOf(',' + tag + ',') > -1) {
-							if (tags.indexOf(',-' + tag + ',') !== -1) {
-								retVal = false;
-								break;
-							} else {
-								retVal = true;
-							}
+							retVal = true;
+						} else if (tags.indexOf(',-' + tag + ',') !== -1) {
+							retVal = false;
+							break;
 						}
 					}
 				}
 			}
-			
 			return retVal;
 		},
 		
@@ -899,7 +895,6 @@
 		},
 		
 		songInfo:function(songId) {
-			console.log(songId);
 			var
 			song = data.getItemById(songId, 'songs'),
 			album = data.getItemById(song.parent, 'albums'),
