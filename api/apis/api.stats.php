@@ -113,20 +113,26 @@ class Stats {
 			$where = 'AND hit_user = "' . db_Escape($_user) . '" ';
 		}
 
-		$query = 'SELECT SUM(q.total) / COUNT(1) AS AvgPlays FROM (SELECT COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where .'GROUP BY content_id) AS q';
-		$row = db_Fetch(db_Query($query));
-		$avgPlays = $row->AvgPlays != null ? $row->AvgPlays : 0;
+		//$query = 'SELECT FLOOR((MAX(q.total) - MIN(q.total)) / 4) AS AvgPlays FROM (SELECT COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where .'GROUP BY content_id) AS q';
+		$query = db_Query('SELECT q.total AS value, COUNT(1) AS total FROM (SELECT COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where . ' GROUP BY content_id ORDER BY total) AS q GROUP BY q.total ORDER BY total DESC');
+		$results = array();
+		while ($row = db_Fetch($query)) {
+			$results[] = $row->value;
+		}
+		$results = array_keys($results);
+		$magicNumber = $results[floor(count($results) * .5)];
 
-		$result = db_Query('SELECT content_id, MIN(hit_date) AS first_play, COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where . 'GROUP BY content_id HAVING total >= ' . $avgPlays);
+		$result = db_Query('SELECT content_id, MIN(hit_date) AS first_play, COUNT(1) AS total FROM hits WHERE hit_date >= ' . $_minDate . ' AND hit_date <= ' . $_maxDate . ' ' . $where . 'GROUP BY content_id HAVING total >= ' . $magicNumber);
 		$weights = array();
 		while ($row = db_Fetch($result)) {
 			$obj = new stdClass();
+			$obj->plays = $row->total;
 			$obj->days = (($_maxDate - $row->first_play) / 86400);
 			$obj->weight = $row->total / $obj->days;
 			$obj->id = $row->content_id;
 			$weights[] = $obj;
 		}
-		uasort($weights, 'self::_trendSort');
+		uasort($weights, function($a, $b) { return $a->weight < $b->weight ? -1 : $a->weight == $b->weight ? 0 : 1; });
 		
 		$songs = array();
 		$songs = $weights;
@@ -166,13 +172,6 @@ class Stats {
 		
 		return $songs;
 	
-	}
-	
-	/**
-	 * Sorts trending songs based upon the trend weight
-	 */
-	private static function _trendSort($a, $b) {
-		return $a->weight < $b->weight ? -1 : $a->weight == $b->weight ? 0 : 1;
 	}
 
 }
