@@ -146,3 +146,8 @@ footer, header, section { display:block; }
 #tagList .remove:hover, #tagList .remove.selected { background:#ff8383; }
 #tagList .add { right:31px; }
 #tagList .add:hover, #tagList .add.selected { background:#5ee0cb; }
+
+.dropDown { display:none; width:298px; background:#eee; z-index:9001; list-style:none; }
+.dropDown li { font:14px PetitaMedium, 'Trebuchet MS', sans-serif; padding:5px; cursor:pointer; }
+.dropDown li:hover { background:#c8d153; }
+#devices { position:absolute; right:15px; top:35px; }
