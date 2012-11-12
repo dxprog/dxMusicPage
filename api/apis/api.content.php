@@ -66,7 +66,7 @@ class Content {
 	public static function getContent($vars) {
 
 		// Get the properties passed
-		$retVal = null;
+		$retVal = new stdClass;
 		$select = isset($vars['select']) ? strlen($vars['select']) > 0 ? $vars['select'] : 'c.*' : 'c.*';
 		$id = isset($vars['id']) ? $vars['id'] : null;
 		$perma = isset($vars['perma']) ? $vars['perma'] : null;
@@ -189,7 +189,7 @@ class Content {
 			$result = db_Query($query);
 			$retVal->content = array();
 			while ($row = db_Fetch($result)) {
-				$obj = null;
+				$obj = new stdClass;
 				$obj->id = isset($row->content_id) ? $row->content_id : null;
 				if (isset($row->content_title)) {
 					$obj->title = $row->content_title;
@@ -284,7 +284,7 @@ class Content {
 		// Round up all the returned tags into an array for output
 		$result = db_Query($query);
 		while ($row = db_Fetch($result)) {
-			$t = null;
+			$t = new stdClass;
 			$t->name = $row->tag_name;
 			if ($noCount) {
 				$t->count = isset($row->tag_count) ? $row->tag_count : 0;
