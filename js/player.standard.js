@@ -2,18 +2,41 @@
 Player.prototype.html5 = (function() {
 
 	var
+	
 	audio = document.createElement("audio"),
+	fader = null,
 	songId = null,
 	playing = false,
 	loading = false,
 	paused = false,
 	audioSupported = (typeof(audio.play) == "function"),
 	positionTimer = null,
+	fadeOutSeconds = 5,
+	fadeOutTimer = null,
+	fadeOutTimerInterval = 50,
+	fadeOutTimerAdjust = fadeOutTimerInterval / (fadeOutSeconds * 1000),
+	
 	status = {
 		state:"stop",
 		length:0,
 		position:0	
 	},
+	
+	fadeOutCallback = function() {
+		
+		if (fader.volume > 0) {
+			fader.volume -= fadeOutTimerAdjust;
+			if (null != audio) {
+				audio.volume += fadeOutTimerAdjust;
+			}
+		} else {
+			clearInterval(fadeOutTimer);
+			fader = null;
+			audio.volume = 1;
+		}
+		
+	},
+	
 	getStatus = function() {
 				
 		if (!audioSupported) {
@@ -22,26 +45,38 @@ Player.prototype.html5 = (function() {
 			// Determine the current play state
 			status.state = 'stopped';
 			if (playing && !paused) {
-				status.state = "playing";
+				status.state = 'playing';
 			}
+			
 			if (paused) {
-				status.state = "pause";
+				status.state = 'pause';
 			}
 			
 			// Get position
 			status.length = audio.duration;
 			status.position = audio.currentTime;
 			
+			if (audio.currentTime >= audio.duration - fadeOutSeconds && audio.duration >= 30) {
+				fader = audio;
+				audio = null;
+				fadeOutTimer = setInterval(fadeOutCallback, fadeOutTimerInterval);
+				songComplete();
+			} else if (audio.currentTime === audio.duration) {
+				songComplete();
+			}
+			
 		}
 		
 		return status;
 		
 	},
+	
 	positionCallback = function() {
 		if (null !== mediaUpdateCallback) {
 			mediaUpdateCallback(getStatus());
 		}
 	},
+	
 	pause = function() {
 		if (audioSupported) {
 			if (paused) {
@@ -52,32 +87,41 @@ Player.prototype.html5 = (function() {
 			paused = !paused;
 		}
 	},
+	
 	beginPlayback = function() {
 		audio.play();
 		loading = false;
 		playing = true;
 	},
+	
 	songComplete = function() {
 		playing = false;
 		paused = false;
 		clearInterval(positionTimer);
 		mediaEndCallback();
 	},
+	
 	playSong = function(id, callback, updateCallback) {
 
-		if (typeof(callback) === "function") {
+		if (typeof(callback) === 'function') {
 			songId = id;
 			mediaEndCallback = callback;
+			audio = document.createElement('audio');
 			audio.src = './api/?type=json&method=dxmp.getTrackFile&id=' + id;
 			audio.load();
 			audio.play();
+			
+			if (null != fadeOutTimer) {
+				audio.volume = 0;
+			}
+			
 			playing = false;
 			loading = true;
 			positionTimer = setInterval(positionCallback, 125);
 			audio.addEventListener('canplaythrough', beginPlayback);
 			
 			// Set up the song complete callback
-			audio.addEventListener("ended", songComplete);
+			// audio.addEventListener("ended", songComplete);
 			
 			// If an update callback was provided, keep tabs on the playback position
 			if (typeof(updateCallback) === "function") {
@@ -105,17 +149,21 @@ Player.prototype.html5 = (function() {
 		}
 		
 		if (null != videoIndex) {
-			var
-			container = document.createElement('div'),
-			elVideo = document.createElement('video');
-			container.setAttribute('id', 'video');
-			elVideo.src = 'videos/' + show.meta.raw_path + '/' + video.meta.files[videoIndex].filename;
-			elVideo.controls = 'controls';
-			elVideo.autoplay = 'autoplay';
-			container.appendChild(elVideo);
-			body.appendChild(container);
+			if ((/PLAYSTATION 3/ig).test(window.navigator.userAgent)) {
+				window.location.href = 'http://dev.dxprog.com:8080/dxmpv2/videos/' + show.meta.raw_path + '/' + video.meta.files[videoIndex].filename;
+			} else {
+				var
+					container = document.createElement('div'),
+					elVideo = document.createElement('video');
+				container.setAttribute('id', 'video');
+				elVideo.src = 'http://dev.dxprog.com:8080/dxmpv2/videos/' + show.meta.raw_path + '/' + video.meta.files[videoIndex].filename;
+				elVideo.controls = 'controls';
+				elVideo.autoplay = 'autoplay';
+				container.appendChild(elVideo);
+				body.appendChild(container);
+			}
 		} else {
-			alert('There is not format suitable for streaming');
+			alert('There is no format suitable for streaming');
 		}
 		
 	},
@@ -258,5 +306,111 @@ Player.prototype.vlc = (function($) {
 	};
 	
 	return { getStatus:getStatus, pause:pause, playSong:playSong, playVideo:playVideo, kill:kill, isPlaying:isPlaying };
+	
+})(jQuery);
+
+// Remote node.js player
+Player.prototype.node = (function($) {
+	
+	var
+	
+	mediaEndTimer = null,
+	mediaEndCallback = null,
+	mediaUpdateCallback = null,
+	positionTimer = null,
+	timerStarted = 0,
+	paused = false,
+	playing = false,
+	loading = false,
+	status = null,
+	lastSync = 0,
+	songId = 0,
+	startTime = 0,
+	params = null,
+	
+	updateStatus = function(callback) {
+		$.ajax({
+			url:'http://' + params.address + '/?action=status',
+			dataType:'jsonp',
+			success:callback
+		});
+	},
+	
+	statusCallback = function(data) {
+		
+		switch (data.status) {
+			case 'playing':
+				// Set a timer to go off when the media is done playing
+				playing = true;
+				clearTimeout(mediaEndTimer);
+				mediaEndTimer = setTimeout(function() { updateStatus(statusCallback); }, 3000);
+				break;
+			case 'idle':
+				if (playing === true) {
+					clearTimeout(mediaEndTimer);
+					playing = false;
+					mediaEndCallback();
+				} else {
+					clearTimeout(mediaEndTimer);
+					mediaEndTimer = setTimeout(function() { updateStatus(statusCallback); }, 3000);
+				}
+				break;
+		}
+		
+	},
+	
+	getStatus = function() {
+		return status;
+	},
+	
+	pause = function() {
+
+	},
+	
+	positionCallback = function() {
+		return { position:0 };
+	},
+	
+	playMedia = function(id) {
+		$.ajax({
+			url:'http://' + params.address + '/?action=play&id=' + id,
+			dataType:'jsonp',
+			success:statusCallback
+		});
+	},
+	
+	playSong = function(id, callback, updateCallback) {
+		
+		if (typeof(callback) === 'function') {
+			mediaEndCallback = callback;
+			clearTimeout(mediaEndTimer);
+			playing = false;
+			playMedia(id);
+		}
+		
+	},
+	
+	playVideo = function(episode, show) {
+		playMedia(episode.id);
+	},
+	
+	kill = function() {
+		clearInterval(positionTimer);
+		clearTimeout(mediaEndTimer);
+		if (playing && !paused) {
+			pause();
+		}
+		return 0;
+	},
+	
+	isPlaying = function() {
+		return playing | loading;
+	},
+	
+	setParams = function(val) {
+		params = val;
+	};
+	
+	return { getStatus:getStatus, pause:pause, playSong:playSong, playVideo:playVideo, kill:kill, isPlaying:isPlaying, setParams:setParams };
 	
 })(jQuery);
