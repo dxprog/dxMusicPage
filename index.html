@@ -7,13 +7,14 @@
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<script type="text/javascript" src="js/dxapi.js"></script>
 		<script type="text/javascript" src="js/player.js"></script>
-		<script type="text/javascript" src="js/player.standard.js"></script>
+		<script type="text/javascript" src="js/player.standard.js?20121112"></script>
 		<script type="text/javascript" src="js/dxplot.js"></script>
 	<body>
 		<header id="pageHead">
 			<h1>dxMusicPage</h1>
 			<input type="text" id="search" />
-			<span class="vlc control disabled" title="Play Through VLC" id="vlc">VLC</span>
+			<span class="vlc control disabled" title="Play on External Device" id="vlc">External</span>
+			<ul id="devices" class="dropDown"></ul>
 		</header>
 		<div id="main">
 			<div class="gridBg"></div>
@@ -27,6 +28,7 @@
 						<li>Latest</li>
 						<li>Shows</li>
 						<li>Playlists</li>
+						<li>Random Song Pool</li>
 					</ul>
 				</div>
 				<ul id="mainList" class="list"></ul>
