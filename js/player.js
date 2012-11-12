@@ -34,16 +34,22 @@ var Player = function() {
 	};
 	
 	// Set's the player plug-in, kills the old on if necessary
-	this.setPlayer = function(playerType) {
+	this.setPlayer = function(playerType, params) {
+		
 		if (this.currentPlayer !== null) {
 			this.currentPlayer.kill();
 		}
+		
 		if (typeof(this[playerType]) == 'object') {
 			this.currentPlayer = this[playerType];
+			if (this.currentPlayer.hasOwnProperty('setParams')) {
+				this.currentPlayer.setParams(params);
+			}
 			return true;
 		} else {
 			return false;
 		}
+		
 	};
 	
 	this.isPlaying = function() {
