@@ -388,7 +388,8 @@
 			includeTag:includeTag, 
 			removeTag:removeTag,
 			save:save,
-			init:init
+			init:init,
+			randomPool:songs
 		};
 	
 	}()),
@@ -536,11 +537,58 @@
 	
 	},
 	
+	devices = {
+		$:$('#devices'),
+		listDown:false,
+		init:function() {
+			$('#devices').on('click', 'li', devices.listItemClick);
+			$('#vlc').on('click', devices.listDisplay);
+		},
+		listDisplay:function() {
+			dx.call('device', 'getDevices', {}, devices.listCallback);
+		},
+		listCallback:function(data) {
+			var 
+				i,
+				device,
+				out = '';
+				
+			if (!devices.listDown) {
+				for (i in data.body) {
+					if (data.body.hasOwnProperty(i)) {
+						device = data.body[i];
+						out += '<li data-address="' + device.ip + ':' + device.port + '">' + device.name + '</li>';
+					}
+				}
+				out += '<li data-address="local">Browser</li>';
+				devices.$.html(out).slideDown();
+				devices.listDown = true;
+			} else {
+				devices.listDown = false;
+				devices.$.slideUp();
+			}
+		},
+		listItemClick:function(e) {
+			var address = e.currentTarget.getAttribute('data-address');
+			if (address === 'local') {
+				player.setPlayer('html5');
+				$vlc.addClass('disabled');
+			} else {
+				player.setPlayer('node', { address:address });
+				$vlc.removeClass('disabled');
+			}
+			devices.$.slideUp();
+			devices.listDown = false;
+			
+		}
+	},
+	
 	vlcClick = function(e) {
-		$vlc.toggleClass('disabled');
+		/* $vlc.toggleClass('disabled');
 		playerType = playerType === 'vlc' ? 'html5' : 'vlc';
 		player.setPlayer(playerType);
 		$.cookie('player', playerType, {expires:90});
+		*/
 	},
 	
 	playPauseClick = function(e) {
@@ -1003,6 +1051,10 @@
 			
 		},
 		
+		displayRandomPool:function() {
+			var songs = playlist.randomPool;
+		},
+		
 		listByType:function(type) {
 			type = null != type ? type : '';
 			switch (type.toLowerCase()) {
@@ -1327,7 +1379,7 @@
 		$('body').delegate('#videoList .close', 'click', video.closeClick);
 		$('body').delegate('#videoList .head', 'click', video.headClick);
 		$search.keyup(searchKeyEvent);
-		$vlc.click(vlcClick);
+		devices.init();
 		drag.init();
 		$('#settings').click(data.getSongGenres);
 		actions.init();
