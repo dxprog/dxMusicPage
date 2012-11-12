@@ -26,10 +26,11 @@ class Device {
 			
 			// Ping the device and make sure it's really reachable
 			$file = @json_decode(@file_get_contents('http://' . $ip . ':' . $port . '/?action=ping'));
-			if (isset($file->alive) && $file->alive == true) {	
+			
+			if (isset($file->alive) && $file->alive == true) {
 				switch ($status) {
 					case DEVICE_STATUS_BORN:
-						$obj = new stdClass();
+						$obj = new stdClass;
 						$obj->id = $id;
 						$obj->name = $name;
 						$obj->status = $status;
@@ -67,7 +68,22 @@ class Device {
 	 * Returns a list of available devices
 	 */
 	public static function getDevices() {
-		return DxCache::Get(DEVICE_CACHE_KEY);
+		
+		$devices = DxCache::Get(DEVICE_CACHE_KEY);
+		$retVal = $devices;
+		
+		// Run through and prune dead devices
+		if (false !== $devices) {
+			$retVal = array();
+			foreach ($devices as $id => $device) {
+				if (time() < $device->ttl) {
+					$retVal[$id] = $device;
+				}
+			}
+			DxCache::Set(DEVICE_CACHE_KEY, $retVal);
+		}
+		
+		return $retVal;
 	}
 	
 }
