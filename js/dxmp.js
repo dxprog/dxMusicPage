@@ -4,6 +4,8 @@
 	
 	var
 	
+	months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+	
 	// DOM objects
 	$main = $('#main'),
 	$mainList = $('#mainList'),
@@ -57,8 +59,8 @@
 		songWithArt:'<li song_id="{id}" album_id="{album}" class="song"><img src="thumb.php?file={art}&width=50&height=50" /><p>{title}</p></li>',
 		songItem:'<li song_id="{song_id}" class="song">{title}</li>',
 		searchItem:'<li song_id="{song_id}" class="song search">{track}. {title}</li>',
-		songInfo:'<div class="songInfo new"><div class="artWrapper"><img src="{art}" alt="{album_title}" /><span class="editAlbum"></span></div><h3>{album_title}</h3><h4>{song_title}</h4><ul class="tags">{tags}<li><span>+</span></ul></div>',
-		wallpaper:'<img src="{src}" class="wallpaper new" />',
+		songInfo:'<div class="songInfo new"><h3>{album_title}</h3><h4>{song_title}</h4><div class="artWrapper"><img src="{art}" alt="{album_title}" /><span class="editAlbum"></span></div><ul class="tags">{tags}<li><span>+</span></ul></div>',
+		wallpaper:'<div style="background-image:url({src});" class="wallpaper new"></div>',
 		songTags:'<li><span>{tag_name}</span></li>',
 		songAddTag:'<li><input type="text" id="addTag" /></li>',
 		songEditTag:'<li><input type="text" id="editTag" data-initial="{val}" value="{val}" /></li>',
@@ -123,7 +125,7 @@
 			for (var i in data[itemType]) {
 				if (data[itemType].hasOwnProperty(i)) {
 					var item = data[itemType][i];
-					if (item.id === id) {
+					if (parseInt(item.id) === parseInt(id)) {
 						retVal = item;
 						break;
 					}
@@ -931,14 +933,95 @@
 		
 		},
 		
-		songStats:function(data) {
-			
+        songChartTotal:function(data) {
 			var chartData = [[]];
 			$('.songInfo').append('<div id="playCountGraph"></div>');
 			for (var i = 0, count = data.body.length; i < count; i++) {
 				chartData[0].push({ value:data.body[i].total, label:data.body[i].user });
 			}
 			$('#playCountGraph').dxPlot(chartData, { animate:true, colors:['rgba(200, 209, 83, .6)', 'rgba(94, 224, 203, .6)'] });
+        },
+        
+		songChartTime:function(data) {
+			
+			var
+				
+				$body = $('body'),
+				lastIndex = null,
+				lastSeries = null,
+				
+				xTicks = function(data) {		
+					var date = new Date(data.min), retVal = [], hours = 0;
+					for (var i = 0; i < 30; i++) {
+						retVal.push(date.getTime());
+						date.setDate(date.getDate() + 1);
+					}
+					return retVal;
+				},
+				
+				tickFormat = function(data, axis) {
+					var date = new Date(data), retVal = '';
+					retVal = date.getDate();
+					return retVal;
+				},
+				
+				plotHover = function(event, pos, item) {
+					if (item && (item.dataIndex != null || item.dataSeries != null)) {
+						$('#graphTip').remove();
+						var date = new Date(item.datapoint[0]);
+						$body.append('<span id="graphTip" style="left:' + item.pageX + 'px; top:' + (item.pageY - 80) + 'px;"><strong>' + months[date.getMonth()].substr(0, 3) + ' ' + date.getDate() + '</strong><br />' + Math.round(item.datapoint[1]) + ' plays</span>');
+						lastIndex = item.dataIndex;
+					} else {
+						$('#graphTip').remove();
+					}
+				},
+				
+				userPlays = { 
+					lines:{ show:true, fill:true },
+                    curvedLines:{ apply:true, fit:true },
+					// points:{ show:true },
+					color:'#c8d153',
+					label:'My Plays',
+					data:[]
+				},
+				
+				othersPlays = {
+					lines:{ show:true, fill:true },
+                    curvedLines:{ apply:true },
+					// points:{ show:true },
+					color:'#5ee0cb',
+					label:'Others',
+					data:[]
+				};
+				
+			for (var i in data.body) {
+				if (data.body.hasOwnProperty(i)) {
+					
+					var date = data.body[i].date * 1000;
+					userPlays.data.push([date, data.body[i].user_plays]);
+					othersPlays.data.push([date, data.body[i].others_plays]);
+					
+				}
+			}
+			
+			var $graph = $('#dayGraph');
+			
+			var t = new Date();
+			t = (new Date(t.getFullYear() + '-01-01')).getTime();
+			
+			var plot = $.plot(
+				$graph,
+				[ userPlays, othersPlays ], 
+				{
+					yaxis:{ show:false },
+					xaxis:{ mode:'time', ticks:xTicks, tickFormatter:tickFormat, show:false },
+					series:{ lines:{ show:true }, curvedLines: {  active:true } },
+					grid:{ borderWidth:0, color:'#fff', hoverable: true, mouseActiveRadius: 10, },
+					legend:{ position:'nw', noColumns:2, backgroundColor:'rgb(0, 0, 0, 0)' }
+				}
+			);
+			
+			$graph.bind('plothover', plotHover);
 			
 		},
 		
@@ -964,16 +1047,19 @@
 				.css({'opacity':'0', 'left':'230px'})
 				.animate({'left':'30px', 'opacity':'1'}, 500, function() {
 					$(this).removeClass('new');
-					dx.call('stats', 'getTrackUsers', { id:song.id }, display.songStats);
+					dx.call('stats', 'getTrackUsers', { id:song.id }, display.songChartTotal);
+					dx.call('stats', 'getUserPlaysByDay', { id:song.id, user:userName }, display.songChartTime);
 					$main.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
 					if (null != album.meta && typeof (album.meta.wallpaper) === 'string') {
 						var
 						wallpaper = templates.render('wallpaper', {'src':artLocation + album.meta.wallpaper}),
 						$wallpaper = $(wallpaper);
-						$wallpaper.load(function() { 
+						var image = new Image();
+						image.onload = function() { 
 							$main.prepend($wallpaper);
 							$main.find('.wallpaper.new').fadeIn(500, function() { $(this).removeClass('new'); });
-						});
+						};
+						image.src = artLocation + album.meta.wallpaper;
 					}
 				});
 			
@@ -985,10 +1071,10 @@
 			
 			for (var i in json.body) {
 				var
-				item = json.body[i],
-				album = data.getItemById(json.body[i].album, 'albums'),
-				art = data.getAlbumArt(album),
-				out = templates.render('songWithArt', { id:item.id, art:art, title:item.title, album:item.album });
+                    item = json.body[i],
+                    album = data.getItemById(item.album, 'albums'),
+                    art = data.getAlbumArt(album),
+                    out = templates.render('songWithArt', { id:item.id, art:art, title:item.title, album:item.album });
 				$(out).appendTo($mainList);
 			}
 			
@@ -1018,7 +1104,7 @@
 		trending:function() {
 			
 			$.ajax({
-				url:'api/?type=json&method=stats.getTrends',
+				url:'api/?type=json&method=stats.getBest',
 				dataType:'json',
 				success:this.songList
 			});
