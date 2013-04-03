@@ -40,6 +40,43 @@ class Stats {
 	}
 	
 	/**
+	 * Returns the number of plays by day for a user with the option to narrow by song
+	 */
+	public static function getUserPlaysByDay($vars) {
+		
+		$retVal = null;
+		
+		$_user = isset($vars['user']) ? $vars['user'] : null;
+		$_trackId = isset($vars['id']) && is_numeric($vars['id']) ? (int)$vars['id'] : null;
+		$_minDate = isset($vars['minDate']) && is_numeric($vars['minDate']) ? (int)$vars['minDate'] : time() - 86400 * 30;
+		$_maxDate = isset($vars['maxDate']) && is_numeric($vars['maxDate']) ? (int)$vars['maxDate'] : time();
+		
+		if ($_user) {
+			
+			db_Connect();
+			
+			$_user = db_Escape($_user);
+			$query = 'SELECT hit_date AS date, FLOOR(hit_date / 86400) AS day, SUM(CASE WHEN hit_user = "' . $_user . '" THEN 1 ELSE 0 END) AS user_plays, SUM(CASE WHEN hit_user != "' . $_user . '" THEN 1 ELSE 0 END) AS others_plays FROM hits WHERE';
+			$query .= ' hit_date BETWEEN ' . $_minDate . ' AND ' . $_maxDate;
+			if ($_trackId) {
+				$query .= ' AND content_id = ' . $_trackId;
+			}
+			$query .= ' AND hit_type = 2 GROUP BY day';
+			$result = db_Query($query);
+			if (null != $result && $result->count > 0) {
+				$retVal = [];
+				while ($row = db_Fetch($result)) {
+					$retVal[] = $row;
+				}
+			}
+		
+		}
+		
+		return $retVal;
+	
+	}
+	
+	/**
 	 * Returns the most played songs for a given time period
 	 */
 	public static function getMostPlayedSongs($vars) {
@@ -173,5 +210,113 @@ class Stats {
 		return $songs;
 	
 	}
+    
+    /**
+     * Trending items, but using an updated algorithm
+     */
+    public static function getHot($vars) {
+    
+        $retVal = null;
+        $since = isset($vars['since']) && is_numeric($vars['since']) ? $vars['since'] : time() - 604800;
+        $user = isset($vars['user']) ? $vars['user'] : false;
+        $max = isset($vars['max']) && is_numeric($vars['max']) ? $vars['max'] : 15;
+        
+        db_Connect();
+        
+        // Get the average number of plays for the time period. Anything on the hot list has to have that many plays at least
+        $query = 'SELECT COUNT(1) / COUNT(DISTINCT content_id) AS average_plays FROM hits WHERE hit_date >= ' . $since . ' AND hit_type = 2';
+        if ($user) {
+            $query .= ' AND hit_user = "' . db_Escape($user) . '"';
+        }
+        $row = db_Fetch(db_Query($query));
+        $average = round($row->average_plays);
+        
+        $query = 'SELECT c.content_id, c.content_parent, c.content_title, a.content_meta, '
+               . 'LOG10(COUNT(1)) + (AVG(h.hit_date) - ' . $since. ') / 45000 AS score, '
+               . 'COUNT(1) AS plays, FROM_UNIXTIME(MIN(h.hit_date)) AS first_play, FROM_UNIXTIME(MAX(h.hit_date)) AS last_play '
+               . 'FROM hits h INNER JOIN content c ON c.content_id = h.content_id WHERE '
+               . 'h.hit_type = 2 AND h.hit_date >= ' . $since;
+        if ($user) {
+            $query .= ' AND h.hit_user = "' . db_Escape($user) . '"';
+        }
+        
+        $query .= ' GROUP BY h.content_id HAVING plays > ' . $average . ' ORDER BY score DESC LIMIT ' . $max;
+        
+        $result = db_Query($query);
+        if ($result && $result->count > 0) {
+            while ($row = db_Fetch($result)) {
+                $obj = new stdClass;
+                $obj->id = $row->content_id;
+                $obj->title = $row->content_title;
+                $obj->meta = json_decode($row->content_meta);
+                $obj->album = $row->content_parent;
+                $obj->score = $row->score;
+                $obj->plays = $row->plays;
+                $obj->firstPlay = $row->first_play;
+                $obj->lastPlay = $row->last_play;
+                $retVal[] = $obj;
+            }
+        }
+    
+        return $retVal;
+    
+    }
+    
+    /**
+     * Trending items, but using an updated algorithm
+     */
+    public static function getBest($vars) {
+    
+        $retVal = null;
+        $since = isset($vars['since']) && is_numeric($vars['since']) ? $vars['since'] : time() - 604800;
+        $user = isset($vars['user']) ? $vars['user'] : false;
+        $max = isset($vars['max']) && is_numeric($vars['max']) ? $vars['max'] : 15;
+        
+        db_Connect();
+        
+        // Get the average number of plays for the time period. Anything on the hot list has to have that many plays at least
+        $query = 'SELECT COUNT(1) / COUNT(DISTINCT content_id) AS average_plays FROM hits WHERE hit_date >= ' . $since . ' AND hit_type = 2';
+        if ($user) {
+            $query .= ' AND hit_user = "' . db_Escape($user) . '"';
+        }
+        $row = db_Fetch(db_Query($query));
+        $average = round($row->average_plays);
+        
+        $query = 'SELECT c.content_id, c.content_parent, c.content_title, c.content_meta, '
+               . 'COUNT(1) AS plays, FROM_UNIXTIME(MIN(h.hit_date)) AS first_play, FROM_UNIXTIME(MAX(h.hit_date)) AS last_play '
+               . 'FROM hits h INNER JOIN content c ON c.content_id = h.content_id WHERE '
+               . 'h.hit_type = 2 AND h.hit_date >= ' . $since;
+        if ($user) {
+            $query .= ' AND h.hit_user = "' . db_Escape($user) . '"';
+        }
+        
+        $query .= ' GROUP BY h.content_id HAVING plays > ' . $average;
+        
+        $phat = 1;
+        $z = 1.0;
+        $z2 = $z * $z;
+        
+        $wrap = 'SELECT q.*, SQRT(' . $phat . ' + ' . $z2 . ' / (2 * q.plays) - ' . $z . ' * ((' . $phat . ' * (1 - ' . $phat . ') + ' . $z2 . ' / (4 * q.plays)) / q.plays)) / ( 1 + ' . $z2 . ' / q.plays) AS score';
+        $wrap .= ' FROM (' . $query . ') AS q ORDER BY score DESC LIMIT ' . $max;
+        
+        $result = db_Query($wrap);
+        if ($result && $result->count > 0) {
+            while ($row = db_Fetch($result)) {
+                $obj = new stdClass;
+                $obj->id = (int) $row->content_id;
+                $obj->title = $row->content_title;
+                $obj->meta = json_decode($row->content_meta);
+                $obj->album = (int) $row->content_parent;
+                $obj->score = (float) $row->score;
+                $obj->plays = (int) $row->plays;
+                $obj->firstPlay = $row->first_play;
+                $obj->lastPlay = $row->last_play;
+                $retVal[] = $obj;
+            }
+        }
+    
+        return $retVal;
+    
+    }
 
 }
