@@ -28,11 +28,10 @@ footer, header, section { display:block; }
 .pause { width:40px; background-position:-48px 0; }
 .pause:hover { background-position:-48px -50px; }
 .random { width:26px; right:18px; position:absolute; top:0; background-position:-88px 0; }
-.smart { width:17px; right:60px; position:absolute; top:5px; background-position:-160px -55px; padding-top:45px; }
-.smart:hover {background-position:-143px -55px; }
+.smart { width:17px; right:60px; position:absolute; top:0; background-position:-160px -50px; }
+.smart:hover {background-position:-143px -50px; }
 .settings { width:26px; right:48px; position:absolute; top:0; background-position:-88px 0; }
 .random.enabled { background-position:-88px -50px; }
-.randomSettings { display:block; position:absolute; background:url(images/drop_arrow.png) no-repeat center center; width:9px; right:5px; top:0; }
 .scrubBar { position:absolute; left:150px; right:150px; top:0; height:50px; background:url(images/scrub_bar.png) repeat-x; }
 .playHead { position:absolute; left:0; top:0; width:8px; background-position:-40px 0; }
 .playHead:hover { background-position:-40px -50px; }
@@ -43,13 +42,12 @@ footer, header, section { display:block; }
 #controls .time { color:#fff; font:14px sans-serif; position:absolute; top:17px; }
 #playIn { left:108px; }
 #playOut { right:108px; }
-#savePlaylist { display:block; width:10px; height:0; padding:10px 0 0; overflow:hidden; background:url(images/control_icons.png) no-repeat -157px -42px; position:absolute; left:106px; top:7px; cursor:pointer; }
 
 #lists { overflow:hidden; -webkit-overflow-scrolling: touch; }
 
 .list { list-style:none; overflow:scroll; overflow-x:hidden; top:25px; bottom:0; position:absolute; width:100%; }
 #mainList li, #secondaryList .album li, #playlist li { padding:5px; position:relative; height:35px; cursor:pointer; }
-#mainList li:hover, #secondaryList .album li:hover, #playlist li:hover, #tagList li:hover { background:rgba(200, 209, 83, .5); }
+#mainList li:hover, #secondaryList .album li:hover, #playlist li:hover { background:rgba(200, 209, 83, .5); }
 #mainList p, #secondaryList .album p, #playlist p { font:18px PetitaBold, 'Trebuchet MS', sans-serif; padding:6px 0 0 41px; text-overflow:ellipsis; width:225px; white-space:nowrap; overflow:hidden; }
 #mainList img, #secondaryList .album img, #playlist img { max-width:35px; max-height:35px; position:absolute; left:5px; }
 
@@ -109,7 +107,7 @@ footer, header, section { display:block; }
 #nowPlaying { padding:10px 0 0 30px; }
 #nowPlaying h2 { font:36px PetitaLight, 'Trebuchet MS', sans-serif; color:#fff; }
 #nowPlaying h2 span { color:#5ee0cb; }
-#nowPlaying .songInfo { position:absolute; left:30px; right:10px; }
+#nowPlaying .songInfo { position:absolute; top:57px; left:30px; right:10px; }
 #nowPlaying .songInfo img { max-width:300px; max-height:300px; }
 #nowPlaying .songInfo h3 { color:#fff; font:18px PetitaLight, 'Trebuchet MS', sans-serif; }
 #nowPlaying .songInfo h4 { color:#5ee0cb; font:36px PetitaLight, 'Trebuchet MS', sans-serif; }
@@ -120,7 +118,6 @@ footer, header, section { display:block; }
 #nowPlaying .tags li { display:inline; font:14px 'Trebuchet MS', sans-serif; color:#fff; cursor:pointer; }
 #nowPlaying .tags span { padding:0 15px 0 0; }
 
-/* -- Deprecated (2013-01-04)
 .dxPlot { height:202px; float:left; }
 .dxPlot:first-child { float:left; margin-left:0; }
 .dxPlot .group { float:left; height:100%; padding-bottom:25px; width:198px; }
@@ -134,26 +131,3 @@ footer, header, section { display:block; }
 .dxPlot .group.items3 .barWrap:first-child { margin:0; }
 .dxPlot .group .label { position:absolute; bottom:-15px; display:block; width:100%; text-align:center; font:12px/12px sans-serif; text-transform:lowercase; color:#fff; }
 .dxPlot h1 { margin:0 0 10px; font:bold 14px/14px sans-serif; text-align:center; }
-*/
-
-#graphTip { position:absolute; border:1px solid #ccc; background:#f5f5f5; padding:3px; font-family:sans-serif; }
-#dayGraph { height:280px; position:absolute; left:0; right:0; bottom:0; }
-.legendLabel { font:14px sans-serif; }
-
-#message { position:absolute; bottom:-45px; right:300px; background:#fff; padding:10px; display:table-cell; vertical-align:middle; overflow:hidden; }
-#message:hover { background:#5ee0cb; cursor:pointer; }
-#message img { float:left; padding-right:10px; }
-#message p { font:16px/1 sans-serif; }
-
-#tagList { right:0; display:none; overflow:scroll; overflow-x:hidden; background:#fff; }
-#tagList li {  padding:5px; position:relative; cursor:pointer; font:18px/1 PetitaBold, 'Trebuchet MS', sans-serif; postion:relative; }
-#tagList span { position:absolute; background:#bbb; display:block; width:16px; padding:4px 0 1px; text-align:center; border-radius:8px; font-size:12px; top:6px; }
-#tagList .remove { right:10px; }
-#tagList .remove:hover, #tagList .remove.selected { background:#ff8383; }
-#tagList .add { right:31px; }
-#tagList .add:hover, #tagList .add.selected { background:#5ee0cb; }
-
-.dropDown { display:none; width:298px; background:#eee; z-index:9001; list-style:none; }
-.dropDown li { font:14px PetitaMedium, 'Trebuchet MS', sans-serif; padding:5px; cursor:pointer; }
-.dropDown li:hover { background:#c8d153; }
-#devices { position:absolute; right:15px; top:35px; }

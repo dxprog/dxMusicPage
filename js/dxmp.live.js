@@ -4,8 +4,6 @@
 	
 	var
 	
-	months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-	
 	// DOM objects
 	$main = $('#main'),
 	$mainList = $('#mainList'),
@@ -59,7 +57,7 @@
 		songWithArt:'<li song_id="{id}" album_id="{album}" class="song"><img src="thumb.php?file={art}&width=50&height=50" /><p>{title}</p></li>',
 		songItem:'<li song_id="{song_id}" class="song">{title}</li>',
 		searchItem:'<li song_id="{song_id}" class="song search">{track}. {title}</li>',
-		songInfo:'<div class="songInfo new"><h3>{album_title}</h3><h4>{song_title}</h4><div class="artWrapper"><img src="{art}" alt="{album_title}" /><span class="editAlbum"></span></div><ul class="tags">{tags}<li><span>+</span></ul></div>',
+		songInfo:'<div class="songInfo new"><div class="artWrapper"><img src="{art}" alt="{album_title}" /><span class="editAlbum"></span></div><h3>{album_title}</h3><h4>{song_title}</h4><ul class="tags">{tags}<li><span>+</span></ul></div>',
 		wallpaper:'<img src="{src}" class="wallpaper new" />',
 		songTags:'<li><span>{tag_name}</span></li>',
 		songAddTag:'<li><input type="text" id="addTag" /></li>',
@@ -120,12 +118,12 @@
 		},
 		
 		getItemById:function(id, itemType) {
-			var retVal = data.defaultAlbum;
+			var retVal = null;
 
 			for (var i in data[itemType]) {
 				if (data[itemType].hasOwnProperty(i)) {
 					var item = data[itemType][i];
-					if (item.id == id) {
+					if (item.id === id) {
 						retVal = item;
 						break;
 					}
@@ -159,23 +157,27 @@
 		},
 		
 		checkSongForTags:function(song, tags) {
-			var retVal = false, tag = null;
+			var retVal = false;
 			
 			if (typeof(song) === 'object' && null != song && ((typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) || tags.indexOf('all') === 0)) {
 				if (!(typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) && tags.indexOf('all') === 0) {
 					retVal = true;
 				} else {
+					var tag = null;
 					for (var i = 0, count = song.tags.length; i < count; i++) {
 						tag = song.tags[i].name;
-						if (tags.indexOf(',' + tag + ',') > -1) {
-							retVal = true;
-						} else if (tags.indexOf(',-' + tag + ',') !== -1) {
-							retVal = false;
-							break;
+						if ((tags.indexOf(tag) > -1 || tags.indexOf('all') === 0)) {
+							if (tags.indexOf('-' + tag) !== -1) {
+								retVal = false;
+								break;
+							} else {
+								retVal = true;
+							}
 						}
 					}
 				}
 			}
+			
 			return retVal;
 		},
 		
@@ -189,11 +191,9 @@
 
 		populateTags:function() {
 			for (var i = 0, count = data.songs.length; i < count; i++) {
-				if (_.isArray(data.songs[i].tags)) {
-					for (var j = 0, tagCount = data.songs[i].tags.length; j < tagCount; j++) {
-						if ($.inArray(data.songs[i].tags[j].name, data.tags) === -1) {
-							data.tags.push(data.songs[i].tags[j].name);
-						}
+				for (var j = 0, tagCount = data.songs[i].tags.length; j < tagCount; j++) {
+					if ($.inArray(data.songs[i].tags[j].name, data.tags) === -1) {
+						data.tags.push(data.songs[i].tags[j].name);
 					}
 				}
 			}
@@ -269,11 +269,11 @@
 		getEligibleSongs = function() {
 			var retVal = [], randomTags = tags.join(',');
 			$.cookie('random_tags', randomTags, { expires:90 });
-			if (randomAll || randomTags == null || randomTags.length == 0) {
+			if (randomAll) {
 				retVal = data.songs;
 			} else {
 				for (var i in data.songs) {
-					if (data.checkSongForTags(data.songs[i], ',' + randomTags + ',')) {
+					if (data.checkSongForTags(data.songs[i], randomTags)) {
 						retVal.push(data.songs[i]);
 					}
 				}
@@ -293,13 +293,11 @@
 			if (currentSong + 1 <= list.length) {
 				playSong(currentSong);
 			} else if (random) {
-				if (songs.length > 0) {
-					var rand = Math.floor(Math.random() * songs.length);
-					while (typeof(songs[rand]) === 'undefined' || null == songs[rand].meta) {
-						rand = Math.floor(Math.random() * songs.length);
-					}
-					queueSong(songs[rand].id);
+				var rand = Math.floor(Math.random() * songs.length);
+				while (typeof(songs[rand]) === 'undefined' || null == songs[rand].meta) {
+					rand = Math.floor(Math.random() * songs.length);
 				}
+				queueSong(songs[rand].id);
 			}
 		},
 		
@@ -319,19 +317,6 @@
 				tags.push(tag);
 			} else {
 				tags[index] = tag;
-			}
-			songs = getEligibleSongs();
-		},
-
-		removeTag = function(tag) {
-			var index = tags.indexOf(tag);
-			if (index !== -1) {
-				tags.splice(index, 1);
-			}
-
-			index = tags.indexOf('-' + tag);
-			if (index !== -1) {
-				tags.splice(index, 1);
 			}
 			songs = getEligibleSongs();
 		},
@@ -376,7 +361,7 @@
 			var tagCookie = $.cookie('random_tags');
 			if (null != tagCookie && tagCookie.length > 0) {
 				tags = tagCookie.split(',');
-				songs = getEligibleSongs();
+				getEligibleSongs();
 			} else {
 				songs = data.songs;
 			}
@@ -390,10 +375,8 @@
 			getPlayingSong:getPlayingSong, 
 			excludeTag:excludeTag, 
 			includeTag:includeTag, 
-			removeTag:removeTag,
 			save:save,
-			init:init,
-			randomPool:songs
+			init:init
 		};
 	
 	}()),
@@ -541,58 +524,11 @@
 	
 	},
 	
-	devices = {
-		$:$('#devices'),
-		listDown:false,
-		init:function() {
-			$('#devices').on('click', 'li', devices.listItemClick);
-			$('#vlc').on('click', devices.listDisplay);
-		},
-		listDisplay:function() {
-			dx.call('device', 'getDevices', {}, devices.listCallback);
-		},
-		listCallback:function(data) {
-			var 
-				i,
-				device,
-				out = '';
-				
-			if (!devices.listDown) {
-				for (i in data.body) {
-					if (data.body.hasOwnProperty(i)) {
-						device = data.body[i];
-						out += '<li data-address="' + device.ip + ':' + device.port + '">' + device.name + '</li>';
-					}
-				}
-				out += '<li data-address="local">Browser</li>';
-				devices.$.html(out).slideDown();
-				devices.listDown = true;
-			} else {
-				devices.listDown = false;
-				devices.$.slideUp();
-			}
-		},
-		listItemClick:function(e) {
-			var address = e.currentTarget.getAttribute('data-address');
-			if (address === 'local') {
-				player.setPlayer('html5');
-				$vlc.addClass('disabled');
-			} else {
-				player.setPlayer('node', { address:address });
-				$vlc.removeClass('disabled');
-			}
-			devices.$.slideUp();
-			devices.listDown = false;
-			
-		}
-	},
-	
 	vlcClick = function(e) {
-		/* $vlc.toggleClass('disabled');
+		$vlc.toggleClass('disabled');
 		playerType = playerType === 'vlc' ? 'html5' : 'vlc';
 		player.setPlayer(playerType);
 		$.cookie('player', playerType, {expires:90});
-		*/
 	},
 	
 	playPauseClick = function(e) {
@@ -640,14 +576,6 @@
 				$songList.animate({left:"298px"}, 200);
 				break;
 			case 'all':
-				var
-				album_id = $this.parents('ol:first').attr('album_id'),
-				songs = data.getSongsByAlbumId(album_id);
-				
-				for (var i = 0, count = songs.length; i < count; i++) {
-					playlist.queueSong(songs[i].id);
-				}
-				
 				break;
 			default:
 				// player.playSong(songId, function(){}, playProgress);
@@ -744,9 +672,7 @@
 			}
 		},
 		load:function() {
-			var
-			out = '<li data-tag="done">Done<span class="remove">&times;</span></li>',
-			cookieTags = $.cookie('random_tags');
+			var out = '<li data-tag="done">Done<span class="remove">&times;</span></li>';
 			data.populateTags();
 			for (var i = 0, count = data.tags.length; i < count; i++) {
 				out += templates.render('tagListItem', { tag_name:data.tags[i] });
@@ -754,18 +680,6 @@
 			$tagList.html(out);
 			$('#randomSettings').on('click', tags.listClick);
 			$tagList.on('click', 'span', tags.changeTags);
-
-			if (null != cookieTags && cookieTags.length > 0) {
-				cookieTags = cookieTags.split(',');
-				for (var i = 0, count = cookieTags.length; i < count; i++) {
-					if (cookieTags[i].substr(0, 1) == '-') {
-						$tagList.find('[data-tag="' + cookieTags[i].substr(1) + '"] .remove').addClass('selected');
-					} else {
-						$tagList.find('[data-tag="' + cookieTags[i] + '"] .add').addClass('selected');
-					}
-				}
-			}
-
 		},
 		listClick:function() {
 			$tagList.fadeIn();
@@ -773,22 +687,16 @@
 		changeTags:function(e) {
 			var 
 			$target = $(e.currentTarget),
-			$parent = $target.parent(),
-			tag = $parent.attr('data-tag');
+			$parent = $target.parent();
 
-			if (tag !== 'done') {
-				if (!$target.hasClass('selected')) {
-					$parent.find('.selected').removeClass('selected');
-					if ($target.hasClass('add')) {
-						playlist.includeTag(tag);
-					} else {
-						playlist.excludeTag(tag);
-					}
-					$target.addClass('selected');
+			if ($parent.attr('data-tag') !== 'done') {
+				$parent.find('.selected').removeClass('selected');
+				if ($target.hasClass('add')) {
+					playlist.includeTag($parent.attr('data-tag'));
 				} else {
-					playlist.removeTag(tag);
-					$target.removeClass('selected');
+					playlist.excludeTag($parent.attr('data-tag'));
 				}
+				$target.addClass('selected');
 			} else {
 				$tagList.fadeOut();
 			}
@@ -937,96 +845,17 @@
 		
 		songStats:function(data) {
 			
-			/*
-			 -- Total song plays temporarily deprecated (2012-01-04)
 			var chartData = [[]];
 			$('.songInfo').append('<div id="playCountGraph"></div>');
 			for (var i = 0, count = data.body.length; i < count; i++) {
 				chartData[0].push({ value:data.body[i].total, label:data.body[i].user });
 			}
 			$('#playCountGraph').dxPlot(chartData, { animate:true, colors:['rgba(200, 209, 83, .6)', 'rgba(94, 224, 203, .6)'] });
-			*/
-			
-			var
-				
-				$body = $('body'),
-				lastIndex = null,
-				lastSeries = null,
-				
-				xTicks = function(data) {		
-					var date = new Date(data.min), retVal = [], hours = 0;
-					for (var i = 0; i < 30; i++) {
-						retVal.push(date.getTime());
-						date.setDate(date.getDate() + 1);
-					}
-					return retVal;
-				},
-				
-				tickFormat = function(data, axis) {
-					var date = new Date(data), retVal = '';
-					retVal = date.getDate();
-					return retVal;
-				},
-				
-				plotHover = function(event, pos, item) {
-					if (item && (item.dataIndex != null || item.dataSeries != null)) {
-						$('#graphTip').remove();
-						var date = new Date(item.datapoint[0]);
-						$body.append('<span id="graphTip" style="left:' + item.pageX + 'px; top:' + (item.pageY - 80) + 'px;"><strong>' + months[date.getMonth()].substr(0, 3) + ' ' + date.getDate() + '</strong><br />' + Math.round(item.datapoint[1]) + ' plays</span>');
-						lastIndex = item.dataIndex;
-					} else {
-						$('#graphTip').remove();
-					}
-				},
-				
-				userPlays = { 
-					lines:{ show:true, fill:true },
-					// points:{ show:true },
-					color:'#c8d153',
-					label:'My Plays',
-					data:[]
-				},
-				
-				othersPlays = {
-					lines:{ show:true, fill:true },
-					// points:{ show:true },
-					color:'#5ee0cb',
-					label:'Others',
-					data:[]
-				};
-				
-			for (var i in data.body) {
-				if (data.body.hasOwnProperty(i)) {
-					
-					var date = data.body[i].date * 1000;
-					userPlays.data.push([date, data.body[i].user_plays]);
-					othersPlays.data.push([date, data.body[i].others_plays]);
-					
-				}
-			}
-			
-			var $graph = $('#dayGraph');
-			
-			var t = new Date();
-			t = (new Date(t.getFullYear() + '-01-01')).getTime();
-			
-			var plot = $.plot(
-				$graph,
-				[ userPlays, othersPlays ], 
-				{
-					yaxis:{ show:false },
-					xaxis:{ mode:'time', ticks:xTicks, tickFormatter:tickFormat, show:false },
-					series:{ lines:{ show:true } },
-					grid:{ borderWidth:0, color:'#fff', hoverable: true, mouseActiveRadius: 10, },
-					legend:{ position:'nw', noColumns:2, backgroundColor:'rgb(0, 0, 0, 0)' }
-				}
-			);
-			
-			$graph.bind('plothover', plotHover);
 			
 		},
 		
 		songInfo:function(songId) {
+			
 			var
 			song = data.getItemById(songId, 'songs'),
 			album = data.getItemById(song.parent, 'albums'),
@@ -1048,7 +877,7 @@
 				.css({'opacity':'0', 'left':'230px'})
 				.animate({'left':'30px', 'opacity':'1'}, 500, function() {
 					$(this).removeClass('new');
-					dx.call('stats', 'getUserPlaysByDay', { id:song.id, user:userName }, display.songStats);
+					dx.call('stats', 'getTrackUsers', { id:song.id }, display.songStats);
 					$main.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
 					if (null != album.meta && typeof (album.meta.wallpaper) === 'string') {
 						var
@@ -1069,10 +898,10 @@
 			
 			for (var i in json.body) {
 				var
-                    item = json.body[i],
-                    album = data.getItemById(item.album, 'albums'),
-                    art = data.getAlbumArt(album),
-                    out = templates.render('songWithArt', { id:item.id, art:art, title:item.title, album:item.album });
+				item = json.body[i],
+				album = data.getItemById(json.body[i].album, 'albums'),
+				art = data.getAlbumArt(album),
+				out = templates.render('songWithArt', { id:item.id, art:art, title:item.title, album:item.album });
 				$(out).appendTo($mainList);
 			}
 			
@@ -1102,7 +931,7 @@
 		trending:function() {
 			
 			$.ajax({
-				url:'api/?type=json&method=stats.getBest',
+				url:'api/?type=json&method=stats.getTrends',
 				dataType:'json',
 				success:this.songList
 			});
@@ -1133,10 +962,6 @@
 			$mainList.animate({left:"0"}, 200);
 			$songList.animate({left:"298px"}, 200);
 			
-		},
-		
-		displayRandomPool:function() {
-			var songs = playlist.randomPool;
 		},
 		
 		listByType:function(type) {
@@ -1361,10 +1186,10 @@
 			// Sort the songs by track and disc number
 			data.songs.sort(function(a, b) {
 				var 
-					x = a.meta && _.has(a.meta, 'track') ? parseInt(a.meta.track) : 1, // Track #1
-					y = b.meta && _.has(b.meta, 'track') ? parseInt(b.meta.track) : 1, // Track #2
-					i = a.meta && _.has(a.meta, 'disc') ? parseInt(a.meta.disc) : 1, // Disc #1
-					j = b.meta && _.has(b.meta, 'disc') ? parseInt(b.meta.disc) : 1; // Disc #2
+				x = parseInt(a.meta.track), // Track #1
+				y = parseInt(b.meta.track), // Track #2
+				i = parseInt(a.meta.disc), // Disc #1
+				j = parseInt(b.meta.disc); // Disc #2
 				return (i < j) ? -1 : (i == j) ? (x < y) ? -1 : (x == y) ? 0 : 1 : 1;
 			});
 			playlist.init();
@@ -1397,25 +1222,29 @@
 		videos:function() {
 			data.videos.sort(function(a, b) {
 				var
-					i = _.has(a, 'meta') && _.has(a.meta, 'episode') ? parseInt(a.meta.episode) : 0,
-					j = _.has(b, 'meta') && _.has(a.meta, 'episode') ? parseInt(b.meta.episode) : 0,
-					x = _.has(a, 'meta') && _.has(a.meta, 'season') ? parseInt(a.meta.season) : 0,
-					y = _.has(b, 'meta') && _.has(a.meta, 'season') ? parseInt(b.meta.season) : 0;
+				i = a.meta.hasOwnProperty('episode') ? parseInt(a.meta.episode) : 0,
+				j = b.meta.hasOwnProperty('episode') ? parseInt(b.meta.episode) : 0,
+				x = a.meta.hasOwnProperty('season') ? parseInt(a.meta.season) : 0,
+				y = b.meta.hasOwnProperty('season') ? parseInt(b.meta.season) : 0;
 				return (x < y) ? -1 : (x == y) ? (i < j) ? -1 : (i == j) ? 0 : 1 : 1;
 			});
 		},
 	
 		content:function(d) {
-			
 			var item = null;
-
-			d = d.hasOwnProperty('body') ? d.body : d;
 			
-			// Save off the data
-			data.albums = _.has(d, 'album') ? d.album : [];
-			data.songs = _.has(d, 'song') ? d.song : [];
-			data.shows = _.has(d, 'show') ? d.show : [];
-			data.videos = _.has(d, 'video') ? d.video : [];
+			// Blank any existing data
+			data.albums = [];
+			data.songs = [];
+			data.shows = [];
+			data.videos = [];
+			
+			for (var i = 0, count = d.body.length; i < count; i++) {
+				item = d.body[i];
+				if (data.hasOwnProperty(item.type + 's')) {
+					data[item.type + 's'].push(item);
+				}
+			}
 			
 			// Have each content type perform whatever initial data actions need to be performed
 			load.albums();
@@ -1442,11 +1271,7 @@
 			$.cookie('userName', userName, { expires:90 });
 		}
 		
-		if (!window.initData) {
-			dx.call('dxmp', 'getData', {}, load.content);
-		} else {
-			load.content(window.initData);
-		}
+		dx.call('dxmp', 'getData', {}, load.content);
 
 		player.setPlayer(playerType);
 		if (playerType == 'vlc') {
@@ -1463,7 +1288,7 @@
 		$('body').delegate('#videoList .close', 'click', video.closeClick);
 		$('body').delegate('#videoList .head', 'click', video.headClick);
 		$search.keyup(searchKeyEvent);
-		devices.init();
+		$vlc.click(vlcClick);
 		drag.init();
 		$('#settings').click(data.getSongGenres);
 		actions.init();

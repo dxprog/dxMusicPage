@@ -61,6 +61,7 @@ imagecopyresampled ($Out, $Image, $x, $y, 0, 0, $NWidth, $NHeight, $Width, $Heig
 
 // Save out the file and do a redirect
 imagepng ($Out, "./cache/" . $outFile . ".png");
+header ('Expires: ' . date('r', strtotime('+1 year')));
 header ("Location: ./cache/" . $outFile . ".png");
 
 ?>
