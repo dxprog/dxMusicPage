@@ -1,5 +1,7 @@
+import Player from './player';
+
 // VLC player
-Player.prototype.vlc = (function($) {
+Player.register('vlc', (function($) {
 
 	var
 	mediaEndTimer = null,
@@ -122,4 +124,4 @@ Player.prototype.vlc = (function($) {
 
 	return { getStatus:getStatus, pause:pause, playSong:playSong, playVideo:playVideo, kill:kill, isPlaying:isPlaying };
 
-})(jQuery);
+}()));

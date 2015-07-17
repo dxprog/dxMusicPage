@@ -8,7 +8,7 @@ module.exports = function(grunt) {
             dist: {
                 src: [
                     'js/lib/*.js',
-                    'js/dev/*.js'
+                    'build/*.js'
                 ],
                 dest: 'js/dxmp.js'
             }
@@ -39,22 +39,22 @@ module.exports = function(grunt) {
         },
         watch: {
             files: [
-                'static/js/dev/lib/*.js',
-                'static/js/dev/model/*.js',
-                'static/js/dev/view/*.js',
-                'static/js/dev/controls/*.js',
-                'static/js/dev/*.js',
-                'views/*.handlebars',
-                'views/partials/*.handlebars',
-                'static/scss/*.scss'
+                'js/dev/*.js'
             ],
-            tasks: ['handlebars', 'concat', 'babel']
+            tasks: ['handlebars', 'browserify', 'concat']
         },
-        babel: {
+        browserify: {
+            options: {
+              transform: [[ 'babelify', { 'stage': 0 }]]
+            },
             dist: {
-                files: {
-                    'js/dxmp.js': 'js/dxmp.js'
-                }
+                files: [{
+                    expand: true,
+                    cwd: 'js/dev',
+                    src: ['*.js'],
+                    dest: 'build',
+                    ext: '.js'
+                }]
             }
         }
     });
@@ -63,8 +63,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-handlebars');
     grunt.loadNpmTasks('grunt-sass');
-    grunt.loadNpmTasks('grunt-babel');
+    grunt.loadNpmTasks('grunt-browserify');
 
-    grunt.registerTask('default', ['handlebars', 'sass', 'concat', 'babel']);
+    grunt.registerTask('default', ['handlebars', 'sass', 'browserify', 'concat']);
 
 };

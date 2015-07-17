@@ -3,48 +3,55 @@
  * Copyright (c) 2010 Matt Hackmann
  **/
 
-export default Fiber.extend(function() {
-
-  // Reference to the player plug-in that will handle the media
-  var currentPlayer = null;
+let Player = Fiber.extend(function() {
 
   return {
     // Sets the defualt player
     init: function() {
-      this.setPlayer('html5');
+      this._players = {};
+      this._currentPlayer = null;
+      this._date = Date.now();
+    },
+
+    register: function(name, player) {
+      this._players[name] = player;
+      console.log(this._date);
+      if (!this._currentPlayer) {
+        this.setPlayer(name);
+      }
     },
 
     // Returns the current playback status (from plug-in)
     getStatus: function() {
-      return this.currentPlayer.getStatus();
+      return this._currentPlayer.getStatus();
     },
 
     // Plays the current media (from plug-in)
     playSong: function(a,b,c) {
-      return this.currentPlayer.playSong(a,b,c);
+      return this._currentPlayer.playSong(a,b,c);
     },
 
     // Plays a video
     playVideo: function(a,b) {
-      return this.currentPlayer.playVideo(a,b);
+      return this._currentPlayer.playVideo(a,b);
     },
 
     // Pauses the current media (from plug-in)
     pause: function() {
-      return this.currentPlayer.pause();
+      return this._currentPlayer.pause();
     },
 
-    // Set's the player plug-in, kills the old on if necessary
+    // Set's the player plug-in, kills the old one if necessary
     setPlayer: function(playerType, params) {
 
-      if (this.currentPlayer !== null) {
-        this.currentPlayer.kill();
+      if (this._currentPlayer !== null) {
+        this._currentPlayer.kill();
       }
 
-      if (typeof(this[playerType]) == 'object') {
-        this.currentPlayer = this[playerType];
-        if (this.currentPlayer.hasOwnProperty('setParams')) {
-          this.currentPlayer.setParams(params);
+      if (typeof(this._players[playerType]) == 'object') {
+        this._currentPlayer = this._players[playerType];
+        if (this._currentPlayer.hasOwnProperty('setParams')) {
+          this._currentPlayer.setParams(params);
         }
         return true;
       } else {
@@ -54,8 +61,15 @@ export default Fiber.extend(function() {
     },
 
     isPlaying: function() {
-      return this.currentPlayer.isPlaying();
+      return this._currentPlayer.isPlaying();
     }
   };
 
 });
+
+if (!window._playerInstance) {
+  console.log('instantiating player');
+  window._playerInstance = new Player();
+}
+
+export default window._playerInstance;

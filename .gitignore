@@ -1,0 +1,4 @@
+build/
+js/dxmp.js
+._*
+node_modules/

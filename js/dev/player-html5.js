@@ -1,5 +1,7 @@
+import Player from './player';
+
 // HTML 5 Player
-Player.prototype.html5 = (function() {
+Player.register('html5', (function() {
 
 	var
 
@@ -15,6 +17,8 @@ Player.prototype.html5 = (function() {
 	fadeOutTimer = null,
 	fadeOutTimerInterval = 50,
 	fadeOutTimerAdjust = fadeOutTimerInterval / (fadeOutSeconds * 1000),
+	mediaEndCallback = null,
+	mediaUpdateCallback = null,
 
 	status = {
 		state:"stop",
@@ -181,4 +185,4 @@ Player.prototype.html5 = (function() {
 
 	return { getStatus:getStatus, pause:pause, playSong:playSong, playVideo:playVideo, kill:kill, isPlaying:isPlaying };
 
-})();
+}()));

@@ -1,3 +1,6 @@
+import dx from './dxapi';
+import Player from './player';
+
 (function($, undefined) {
 
 	'use strict';
@@ -25,7 +28,7 @@
 	// Various objects and variables
 	playerType = $.cookie('player') || 'html5',
 	userName = $.cookie('userName') || false,
-	player = new Player(),
+	player = Player,
 	artLocation = 'http://dxmp.s3.amazonaws.com/images/',
 	searchList = [],
 	watched = $.cookie('watched') || '',
@@ -1468,7 +1471,6 @@
 
 	};
 
-	init();
-
+	$(init);
 
 }(jQuery));

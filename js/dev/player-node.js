@@ -1,5 +1,7 @@
+import Player from './player';
+
 // Remote node.js player
-Player.prototype.node = (function($) {
+Player.register('node', (function($) {
 
   var
 
@@ -102,4 +104,4 @@ Player.prototype.node = (function($) {
 
   return { getStatus:getStatus, pause:pause, playSong:playSong, playVideo:playVideo, kill:kill, isPlaying:isPlaying, setParams:setParams };
 
-})(jQuery);
+}()));
