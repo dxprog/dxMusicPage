@@ -2,26 +2,14 @@ import dx from './dxapi';
 import Player from './player';
 import templates from './templating';
 import dataManager from './data-manager';
+import dataLoader from './data-loader';
+import playlistManager from './playlist-manager';
+import tagManager from './tag-manager';
+import domElements from './dom-elements';
 
 var
 
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-
-// DOM objects
-$main = $('#main'),
-$mainList = $('#mainList'),
-$songList = $('#secondaryList'),
-$playHead = $('.playHead'),
-$playlist = $('#playlist'),
-$playIn = $('#playIn'),
-$playOut = $('#playOut'),
-$playPause = $('#playPause'),
-$nowPlaying = $('#nowPlaying'),
-$vlc = $('#vlc'),
-$search = $('#search'),
-$message = $('#message'),
-$videoList = null,
-$tagList = $('#tagList'),
 
 // Various objects and variables
 playerType = $.cookie('player') || 'html5',
@@ -70,175 +58,6 @@ helpers = {
 
 },
 
-// Playlist handling
-playlist = (function() {
-
-  var
-
-  list = [],
-  currentSong = 0,
-  playing = false,
-  infinite = false,
-  random = false,
-  time = 0,
-  randomAll = false,
-  songs = [],
-  tags = [],
-
-  queueSong = function(id) {
-    var
-    song = dataManager.getItemById(id, 'songs'),
-    album = dataManager.getItemById(song.parent, 'albums'),
-    art = dataManager.getAlbumArt(album),
-    out = templates.render('albumListItem', {id:list.length, art:art, title:song.title});
-
-    // Recalculate the playlist time
-    if (parseInt(song.meta.duration, 10) > 0) {
-      time += parseInt(song.meta.duration);
-      $('#playlistLength').html(helpers.niceTime(time));
-    }
-
-    $(out).appendTo($playlist);
-    list.push(id);
-
-    if (!playing) {
-      playSong(currentSong);
-    }
-
-  },
-
-  getEligibleSongs = function() {
-    var retVal = [], randomTags = tags.join(',');
-    $.cookie('random_tags', randomTags, { expires:90 });
-    if (randomAll || randomTags == null || randomTags.length == 0) {
-      retVal = dataManager.songs;
-    } else {
-      for (var i in dataManager.songs) {
-        if (dataManager.checkSongForTags(dataManager.songs[i], ',' + randomTags + ',')) {
-          retVal.push(dataManager.songs[i]);
-        }
-      }
-    }
-    return retVal;
-  },
-
-  songComplete = function() {
-    dx.call('content', 'logContentView', { 'id':list[currentSong], 'user':userName });
-    nextSong();
-  },
-
-  nextSong = function() {
-    playing = false;
-    $playlist.find('li[album_id=' + currentSong + ']').removeClass('playing').addClass('played');
-    currentSong++;
-    if (currentSong + 1 <= list.length) {
-      playSong(currentSong);
-    } else if (random) {
-      if (songs.length > 0) {
-        var rand = Math.floor(Math.random() * songs.length);
-        while (typeof(songs[rand]) === 'undefined' || null == songs[rand].meta) {
-          rand = Math.floor(Math.random() * songs.length);
-        }
-        queueSong(songs[rand].id);
-      }
-    }
-  },
-
-  excludeTag = function(tag) {
-    var index = tags.indexOf(tag) === -1 ? tags.indexOf('-' + tag) : tags.indexOf(tag);
-    if (index === -1) {
-      tags.push('-' + tag);
-    } else {
-      tags[index] = '-' + tag;
-    }
-    songs = getEligibleSongs();
-  },
-
-  includeTag = function(tag) {
-    var index = tags.indexOf(tag) === -1 ? tags.indexOf('-' + tag) : tags.indexOf(tag);
-    if (index === -1) {
-      tags.push(tag);
-    } else {
-      tags[index] = tag;
-    }
-    songs = getEligibleSongs();
-  },
-
-  removeTag = function(tag) {
-    var index = tags.indexOf(tag);
-    if (index !== -1) {
-      tags.splice(index, 1);
-    }
-
-    index = tags.indexOf('-' + tag);
-    if (index !== -1) {
-      tags.splice(index, 1);
-    }
-    songs = getEligibleSongs();
-  },
-
-  playSong = function(index) {
-    $playPause.attr('title', 'Pause Song').removeClass('play').addClass('pause');
-    player.playSong(list[index], songComplete, playProgress);
-    playing = true;
-    $playlist.find('li[album_id=' + index + ']').addClass('playing');
-    display.songInfo(list[index]);
-  },
-
-  toggleRandom = function() {
-    random = !random;
-  },
-
-  getPlayingSong = function() {
-    return dataManager.getItemById(list[currentSong], 'songs');
-  },
-
-  toggleInfinite = function() {
-    infinite = !infinite;
-  },
-
-  save = function() {
-
-    var name = prompt('Name of playlist');
-    if (name.length && list.length) {
-      var ids = [];
-      for (var i = 0, count = list.length; i < count; i++) {
-        ids.push(list[i]);
-      }
-      $.ajax({
-        url:'api/?type=json&method=dxmp.savePlaylist&songs=' + escape(ids.join(',')) + '&name=' + escape(name),
-        dataType:'json'
-      });
-    }
-
-  },
-
-  init = function() {
-    var tagCookie = $.cookie('random_tags');
-    if (null != tagCookie && tagCookie.length > 0) {
-      tags = tagCookie.split(',');
-      songs = getEligibleSongs();
-    } else {
-      songs = dataManager.songs;
-    }
-  };
-
-  return {
-    queueSong:queueSong,
-    nextSong:nextSong,
-    toggleRandom:toggleRandom,
-    toggleInfinite:toggleInfinite,
-    getPlayingSong:getPlayingSong,
-    excludeTag:excludeTag,
-    includeTag:includeTag,
-    removeTag:removeTag,
-    save:save,
-    init:init,
-    randomPool:songs
-  };
-
-}()),
-
 upload = function(file, contentId, uploadId) {
 
   // Ugh... we'll do this manually
@@ -256,7 +75,7 @@ upload = function(file, contentId, uploadId) {
     var
     percent = Math.round(e.loaded / e.total * 100),
     msg = percent === 0 ? 'Waiting' : percent === 100 ? 'Syncing' : percent + '%';
-    $progress.html(msg).css('background-position', (Math.abs(percent - 100) / 100 * progWidth * -1) + 'px 0');
+    domElements.$progress.html(msg).css('background-position', (Math.abs(percent - 100) / 100 * progWidth * -1) + 'px 0');
   },
 
   readComplete = function(e) {
@@ -286,7 +105,7 @@ upload = function(file, contentId, uploadId) {
     var data = $.parseJSON(xhr.responseText);
     if (typeof(data.body.message) !== 'string') {
       $info.removeClass('uploading').addClass('complete').html(data.body.title);
-      dx.call('dxmp', 'getData', { 'noCache':'true' }, load.content);
+      dx.call('dxmp', 'getData', { 'noCache':'true' }, dataLoader.content);
     } else {
       $info.removeClass('uploading').addClass('error').append('<span>' + data.body.message + '</span>');
     }
@@ -326,7 +145,7 @@ drag = {
           } else if ($target.attr('show_id')) {
             albumId = $target.attr('show_id');
           } else {
-            var song = playlist.getPlayingSong();
+            var song = playlistManager.getPlayingSong();
             if (null == song || song.parent <= 0 || song.parent == undefined) {
               return;
             }
@@ -371,9 +190,9 @@ playProgress = function(e) {
     sLeft = Math.floor(left) % 60;
     s = s.toString().length === 1 ? '0' + s : s;
     sLeft = sLeft.toString().length === 1 ? '0' + sLeft : sLeft;
-    $playHead.css('left', p + '%');
-    $playIn.text(m + ':' + s);
-    $playOut.text('-' + mLeft + ':' + sLeft);
+    domElements.$playHead.css('left', p + '%');
+    domElements.$playIn.text(m + ':' + s);
+    domElements.$playOut.text('-' + mLeft + ':' + sLeft);
   }
 
 },
@@ -417,10 +236,10 @@ devices = {
     var address = e.currentTarget.getAttribute('data-address');
     if (address === 'local') {
       player.setPlayer('html5');
-      $vlc.addClass('disabled');
+      domElements.$vlc.addClass('disabled');
     } else {
       player.setPlayer('node', { address:address });
-      $vlc.removeClass('disabled');
+      domElements.$vlc.removeClass('disabled');
     }
     devices.$.slideUp();
     devices.listDown = false;
@@ -452,17 +271,17 @@ optionClick = function(e) {
 
 optionsClick = function(e) {
   var type = $(e.target).text();
-  display.listByType(type);
+  displayManager.listByType(type);
   $.cookie('list', type, {expires:90});
 },
 
 randomClick = function(e) {
   $(e.target).toggleClass('enabled');
-  playlist.toggleRandom();
+  playlistManager.toggleRandom();
 },
 
 nextClick = function(e) {
-  playlist.nextSong();
+  playlistManager.nextSong();
 },
 
 songClick = function(e) {
@@ -486,20 +305,20 @@ songClick = function(e) {
       songs = dataManager.getSongsByAlbumId(album_id);
 
       for (var i = 0, count = songs.length; i < count; i++) {
-        playlist.queueSong(songs[i].id);
+        playlistManager.queueSong(songs[i].id);
       }
 
       break;
     default:
       // player.playSong(songId, function(){}, playProgress);
-      playlist.queueSong(songId);
+      playlistManager.queueSong(songId);
       break;
   }
 
 },
 
 savePlaylistClick = function(e) {
-  playlist.save();
+  playlistManager.save();
 },
 
 playlistClick = function(e) {
@@ -507,7 +326,7 @@ playlistClick = function(e) {
   if (list.length > 0) {
     list = list.split(',');
     for (var i = 0, count = list.length; i < count; i++) {
-      playlist.queueSong(list[i]);
+      playlistManager.queueSong(list[i]);
     }
   }
 },
@@ -531,121 +350,20 @@ albumClick = function(e) {
     }
   }
 
-  $mainList.animate({left:"-298px"}, 200);
-  $songList.attr('album_id', albumId).html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', songClick);
+  domElements.$mainList.animate({left:"-298px"}, 200);
+  domElements.$songList.attr('album_id', albumId).html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', songClick);
 
-},
-
-tags = {
-  click:function(e) {
-    var
-    $this = $(e.currentTarget),
-    text = $this.text();
-
-    if (e.target.tagName === 'SPAN') {
-      if (text === '+') {
-        tags.add($this);
-      } else {
-        tags.edit($this);
-      }
-    } else {
-      e.stopPropagation();
-    }
-  },
-  add:function($this) {
-    var $parent = $this.parents('ul:first');
-
-    $this.html(templates.render('songAddTag'));
-    $parent.append(templates.render('songTags', {'tag_name':'+'}));
-    $this.find('input').keypress(tags.post);
-  },
-  edit:function($this) {
-    var val = $this.text();
-    $this.html(templates.render('songEditTag', { val:val })).find('input').keypress(tags.post);
-  },
-  post:function(e) {
-    var
-    $this = $(e.currentTarget),
-    initial = $this.attr('data-initial'),
-    tag = $this.val();
-
-    if (e.keyCode === 13 && tag.length > 0) {
-      $this.attr('disabled', 'disabled');
-      $.ajax({
-        url:'/api/?type=json&method=content.syncTag&id=' + playlist.getPlayingSong().id + '&initial=' + initial,
-        dataType:'json',
-        type:'POST',
-        data:{'tag':tag},
-        success:function(data) {
-          $this.parents('li:first').html('<span>' + tag + '</span>');
-        }
-      });
-    } else if (e.keyCode === 27) {
-      $this.parents('li:first').remove();
-    }
-  },
-  load:function() {
-    var
-    out = '<li data-tag="done">Done<span class="remove">&times;</span></li>',
-    cookieTags = $.cookie('random_tags');
-    dataManager.populateTags();
-    for (var i = 0, count = dataManager.tags.length; i < count; i++) {
-      out += templates.render('tagListItem', { tag_name:dataManager.tags[i] });
-    }
-    $tagList.html(out);
-    $('#randomSettings').on('click', tags.listClick);
-    $tagList.on('click', 'span', tags.changeTags);
-
-    if (null != cookieTags && cookieTags.length > 0) {
-      cookieTags = cookieTags.split(',');
-      for (var i = 0, count = cookieTags.length; i < count; i++) {
-        if (cookieTags[i].substr(0, 1) == '-') {
-          $tagList.find('[data-tag="' + cookieTags[i].substr(1) + '"] .remove').addClass('selected');
-        } else {
-          $tagList.find('[data-tag="' + cookieTags[i] + '"] .add').addClass('selected');
-        }
-      }
-    }
-
-  },
-  listClick:function() {
-    $tagList.fadeIn();
-  },
-  changeTags:function(e) {
-    var
-    $target = $(e.currentTarget),
-    $parent = $target.parent(),
-    tag = $parent.attr('data-tag');
-
-    if (tag !== 'done') {
-      if (!$target.hasClass('selected')) {
-        $parent.find('.selected').removeClass('selected');
-        if ($target.hasClass('add')) {
-          playlist.includeTag(tag);
-        } else {
-          playlist.excludeTag(tag);
-        }
-        $target.addClass('selected');
-      } else {
-        playlist.removeTag(tag);
-        $target.removeClass('selected');
-      }
-    } else {
-      $tagList.fadeOut();
-    }
-
-  }
 },
 
 music = {
 
   smartPlaylistClick:function(e) {
-    var song = playlist.getPlayingSong();
+    var song = playlistManager.getPlayingSong();
     if (null != song) {
       dx.call('dxmp', 'buildSmartPlaylist', { id:song.id }, function(data) {
         if (data.body.length > 0) {
           for (var i = 0, count = data.body.length; i < count; i++) {
-            playlist.queueSong(data.body[i]);
+            playlistManager.queueSong(data.body[i]);
           }
         }
       });
@@ -693,27 +411,27 @@ video = {
       }
     }
 
-    $videoList.html(templates.render('videoContent', { items:list }));
-    $videoList.find('.navigation .show').html(show.title);
+    domElements.$videoList.html(templates.render('videoContent', { items:list }));
+    domElements.$videoList.find('.navigation .show').html(show.title);
 
     if (show.meta.hasOwnProperty('wallpaper')) {
-      $videoList.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
-      $videoList.prepend('<img src="images/' + show.meta.wallpaper + '" class="wallpaper" alt="show wallpaper" />');
+      domElements.$videoList.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
+      domElements.$videoList.prepend('<img src="images/' + show.meta.wallpaper + '" class="wallpaper" alt="show wallpaper" />');
     }
 
   },
 
   closeClick:function(e) {
-    $videoList = $('#videoList');
+    domElements.$videoList = $('#videoList');
     if ($('#video').length > 0) {
       $('#video').remove();
     } else {
-      $videoList.animate({ top:'100%' }, function() { $videoList.remove(); $videoList = null; });
+      domElements.$videoList.animate({ top:'100%' }, function() { $videoList.remove(); $videoList = null; });
     }
   },
 
   headClick:function(e) {
-    display.shows();
+    displayManager.shows();
   },
 
   episodeClick:function(e) {
@@ -735,292 +453,10 @@ video = {
 
 },
 
-// List displays
-display = {
-
-  shows:function() {
-    var out = '', item = null, art = '';
-
-    for (var i in dataManager.shows) {
-      item = dataManager.shows[i];
-      if (item.children > 0) {
-        art = item.meta.hasOwnProperty('art') ? item.meta.art : false;
-        out += art ? templates.render('showWithArt', { id:item.id, art:art, title:item.title }) : templates.render('show', { id:item.id, title:item.title });
-      }
-    }
-
-    out = templates.render('videoContent', { items:out });
-    if (null === $videoList) {
-      $videoList = $main.append(templates.render('videoPane')).find('#videoList').animate({ top:'0%' });
-    }
-    $videoList.html(out).undelegate('li.show', 'click').delegate('li.show', 'click', video.showClick);
-    $videoList.html(out).undelegate('li.episode', 'click').delegate('li.episode', 'click', video.episodeClick);
-
-  },
-
-  albums:function() {
-
-    $mainList.empty();
-    var out = '', art = '';
-
-    for (var i in dataManager.albums) {
-      var item = dataManager.albums[i];
-      if (item.children > 0) {
-        art = dataManager.getAlbumArt(item);
-        out += templates.render('albumListItem', { id:item.id, art:art, title:item.title });
-      }
-    }
-
-    $(out).appendTo($mainList);
-    $mainList.undelegate('li.album', 'click').delegate('li.album', 'click', albumClick);
-
-  },
-
-      songChartTotal:function(data) {
-    var chartData = [[]];
-    $('.songInfo').append('<div id="playCountGraph"></div>');
-    for (var i = 0, count = data.body.length; i < count; i++) {
-      chartData[0].push({ value:data.body[i].total, label:data.body[i].user });
-    }
-    $('#playCountGraph').dxPlot(chartData, { animate:true, colors:['rgba(200, 209, 83, .6)', 'rgba(94, 224, 203, .6)'] });
-      },
-
-  songChartTime:function(data) {
-
-    var
-
-      $body = $('body'),
-      lastIndex = null,
-      lastSeries = null,
-
-      xTicks = function(data) {
-        var date = new Date(data.min), retVal = [], hours = 0;
-        for (var i = 0; i < 30; i++) {
-          retVal.push(date.getTime());
-          date.setDate(date.getDate() + 1);
-        }
-        return retVal;
-      },
-
-      tickFormat = function(data, axis) {
-        var date = new Date(data), retVal = '';
-        retVal = date.getDate();
-        return retVal;
-      },
-
-      plotHover = function(event, pos, item) {
-        if (item && (item.dataIndex != null || item.dataSeries != null)) {
-          $('#graphTip').remove();
-          var date = new Date(item.datapoint[0]);
-          $body.append('<span id="graphTip" style="left:' + item.pageX + 'px; top:' + (item.pageY - 80) + 'px;"><strong>' + months[date.getMonth()].substr(0, 3) + ' ' + date.getDate() + '</strong><br />' + Math.round(item.datapoint[1]) + ' plays</span>');
-          lastIndex = item.dataIndex;
-        } else {
-          $('#graphTip').remove();
-        }
-      },
-
-      userPlays = {
-        lines:{ show:true, fill:true },
-                  curvedLines:{ apply:true, fit:true },
-        // points:{ show:true },
-        color:'#c8d153',
-        label:'My Plays',
-        data:[]
-      },
-
-      othersPlays = {
-        lines:{ show:true, fill:true },
-                  curvedLines:{ apply:true },
-        // points:{ show:true },
-        color:'#5ee0cb',
-        label:'Others',
-        data:[]
-      };
-
-    for (var i in data.body) {
-      if (data.body.hasOwnProperty(i)) {
-
-        var date = data.body[i].date * 1000;
-        userPlays.data.push([date, data.body[i].user_plays]);
-        othersPlays.data.push([date, data.body[i].others_plays]);
-
-      }
-    }
-
-    var $graph = $('#dayGraph');
-
-    var t = new Date();
-    t = (new Date(t.getFullYear() + '-01-01')).getTime();
-
-    var plot = $.plot(
-      $graph,
-      [ userPlays, othersPlays ],
-      {
-        yaxis:{ show:false },
-        xaxis:{ mode:'time', ticks:xTicks, tickFormatter:tickFormat, show:false },
-        series:{ lines:{ show:true }, curvedLines: {  active:true } },
-        grid:{ borderWidth:0, color:'#fff', hoverable: true, mouseActiveRadius: 10, },
-        legend:{ position:'nw', noColumns:2, backgroundColor:'rgb(0, 0, 0, 0)' }
-      }
-    );
-
-    $graph.bind('plothover', plotHover);
-
-  },
-
-  songInfo:function(songId) {
-    var
-    song = dataManager.getItemById(songId, 'songs'),
-    album = dataManager.getItemById(song.parent, 'albums'),
-
-    art = dataManager.getAlbumArt(album),
-    tags = '',
-    info = '';
-
-    for (var i in song.tags) {
-      tags += templates.render('songTags', {'tag_name':song.tags[i].name});
-    }
-
-    info = templates.render('songInfo', {'album_title':album.title, 'song_title':song.title, 'art':artLocation + art, 'tags':tags});
-    document.title = song.title + ' - dxMusicPage';
-    $nowPlaying.find('.songInfo').animate({'top':'+=200px', 'opacity':'0'}, 500, function() { $(this).remove(); });
-    $nowPlaying
-      .append(info)
-      .find('.songInfo.new')
-      .css({'opacity':'0', 'left':'230px'})
-      .animate({'left':'30px', 'opacity':'1'}, 500, function() {
-        $(this).removeClass('new');
-        dx.call('stats', 'getTrackUsers', { id:song.id }, display.songChartTotal);
-        dx.call('stats', 'getUserPlaysByDay', { id:song.id, user:userName }, display.songChartTime);
-        $main.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
-        if (null != album.meta && typeof (album.meta.wallpaper) === 'string') {
-          var
-          wallpaper = templates.render('wallpaper', {'src':artLocation + album.meta.wallpaper}),
-          $wallpaper = $(wallpaper);
-          var image = new Image();
-          image.onload = function() {
-            $main.prepend($wallpaper);
-            $main.find('.wallpaper.new').fadeIn(500, function() { $(this).removeClass('new'); });
-          };
-          image.src = artLocation + album.meta.wallpaper;
-        }
-      });
-
-  },
-
-  songList:function(json) {
-
-    $mainList.empty();
-
-    for (var i in json.body) {
-      var
-                  item = json.body[i],
-                  album = dataManager.getItemById(item.album, 'albums'),
-                  art = dataManager.getAlbumArt(album),
-                  out = templates.render('songWithArt', { id:item.id, art:art, title:item.title, album:item.album });
-      $(out).appendTo($mainList);
-    }
-
-    $mainList.undelegate('li.song', 'click').delegate('li.song', 'click', songClick);
-
-  },
-
-  playlists:function() {
-    dx.call('content', 'getContent', { contentType:'list' }, function(data) {
-      if ('content' in data.body && data.body.content.length > 0) {
-        var out = '';
-        $mainList.empty();
-        for (var i in data.body.content) {
-          if (data.body.content.hasOwnProperty(i)) {
-            var list = data.body.content[i];
-            if (list.body.length > 0) {
-              out += '<li data-list="' + list.body + '" class="song">' + list.title + '</li>';
-            }
-          }
-        }
-        $mainList.animate({left:"-298px"}, 200);
-        $songList.html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', playlistClick);
-      }
-    });
-  },
-
-  trending:function() {
-
-    $.ajax({
-      url:'api/?type=json&method=stats.getBest',
-      dataType:'json',
-      success:this.songList
-    });
-
-    $mainList.animate({left:"0"}, 200);
-    $songList.animate({left:"298px"}, 200);
-
-  },
-
-  userTracks:function() {
-    $.ajax({
-      url:'api/?type=json&method=stats.getTopUserTracks&user=' + userName,
-      dataType:'json',
-      success:this.songList
-    });
-
-    $mainList.animate({left:"0"}, 200);
-    $songList.animate({left:"298px"}, 200);
-  },
-
-  latest:function() {
-    $.ajax({
-      url:'api/?type=json&method=dxmp.getLatest',
-      dataType:'json',
-      success:this.songList
-    });
-
-    $mainList.animate({left:"0"}, 200);
-    $songList.animate({left:"298px"}, 200);
-
-  },
-
-  displayRandomPool:function() {
-    var songs = playlist.randomPool;
-  },
-
-  listByType:function(type) {
-    type = null != type ? type : '';
-    switch (type.toLowerCase()) {
-      case 'my most played':
-        type = 'My Most Played';
-        this.userTracks();
-        break;
-      case 'playlists':
-        type = 'Playlists';
-        display.playlists();
-        break;
-      case 'shows':
-        type = 'Shows';
-        this.shows();
-        break;
-      case 'trending':
-        type = 'Trending';
-        this.trending();
-        break;
-      case 'latest':
-        type = 'Latest';
-        this.latest();
-        break;
-      default:
-        type = 'Albums';
-        this.albums();
-        break;
-    }
-    $('#option h2').text(type);
-  }
-
-},
-
 searchKeyEvent = function(e) {
 
   var
-  val = $.trim($search.val()).toLowerCase(),
+  val = $.trim(domElements.$search.val()).toLowerCase(),
   out = '',
   list = val.length === 1 || searchList.length == 0 ? dataManager.songs : val.length > 1 ? searchList : null,
   newList = [],
@@ -1066,8 +502,8 @@ searchKeyEvent = function(e) {
       searchList = newList;
     }
 
-    $mainList.animate({left:"-298px"}, 200);
-    $songList
+    domElements.$mainList.animate({left:"-298px"}, 200);
+    domElements.$songList
       .html(out)
       .animate({left:"0"}, 200)
       .undelegate('li.song', 'click')
@@ -1079,11 +515,11 @@ searchKeyEvent = function(e) {
 
   } else {
     searchList = [];
-    $mainList.animate({left:"0"}, 200);
-    $songList.animate({left:"298px"}, 200);
+    domElements.$mainList.animate({left:"0"}, 200);
+    domElements.$songList.animate({left:"298px"}, 200);
   }
 
-  $songList.html(out);
+  domElements.$songList.html(out);
 
 },
 
@@ -1095,7 +531,7 @@ actions = {
   msgClick:function(e) {
     switch (e.currentTarget.getAttribute('data-action')) {
       case 'msg_user_play':
-        playlist.queueSong(e.currentTarget.getAttribute('song_id'));
+        playlistManager.queueSong(e.currentTarget.getAttribute('song_id'));
         break;
     }
     e.stopPropagation();
@@ -1115,15 +551,15 @@ actions = {
 
         switch (item.name) {
           case 'queue':
-            playlist.queueSong(parseInt(item.param), 10);
+            playlistManager.queueSong(parseInt(item.param), 10);
             break;
           case 'msg_new_song':
-            $message
+            domElements.$message
               .attr('data-action', 'msg_new_song')
               .html('<p>A new song has been added!</p>')
               .stop().animate({ bottom:0 }, 400);
           case 'refresh':
-            dx.call('dxmp', 'getData', {}, load.content);
+            dx.call('dxmp', 'getData', {}, dataLoader.content);
             break;
           case 'msg_user_play':
             msgPlay = item;
@@ -1140,14 +576,14 @@ actions = {
         album = dataManager.getItemById(song.parent, 'albums'),
         artwork = dataManager.getAlbumArt(album);
 
-        $message
+        domElements.$message
           .attr('data-action', 'msg_user_play')
           .attr('song_id', song.id)
           .html(templates.render('msgUserPlay', { album_art:artwork, user:item.param.user, title:song.title }))
           .stop().animate({ bottom:0 }, 400);
 
         setTimeout(function() {
-          $message.stop().animate({ bottom:'-' + $message.outerHeight(true) + 'px' });
+          domElements.$message.stop().animate({ bottom:'-' + $message.outerHeight(true) + 'px' });
         }, 6400);
 
       }
@@ -1168,118 +604,6 @@ actions = {
   }
 },
 
-// Data loaders/initializers
-load = {
-  albums:function(d) {
-
-    dataManager.albums.push(dataManager.defaultAlbum);
-    dataManager.defaultAlbum.id = 0;
-    dataManager.albums.push(dataManager.defaultAlbum);
-
-    // Sort the albums alphabetically
-    dataManager.albums.sort(function(a, b) {
-      var retVal = 0;
-      if (null != a.title && null != b.title) {
-        var x = a.title.toLowerCase(), y = b.title.toLowerCase();
-
-        // Sort around articles
-        if (x.substr(0, 4) === "the ") { x = x.substr(4); }
-        if (x.substr(0, 3) === "an ") { x = x.substr(3); }
-        if (x.substr(0, 2) === "a ") { x = x.substr(2); }
-        if (y.substr(0, 4) === "the ") { y = y.substr(4); }
-        if (y.substr(0, 3) === "an ") { y = y.substr(3); }
-        if (y.substr(0, 2) === "a ") { y = y.substr(2); }
-
-        retVal = (x < y) ? -1 : (x == y) ? 0 : 1;
-      }
-      return retVal;
-    });
-
-  },
-
-  songs:function() {
-
-    // Sort the songs by track and disc number
-    dataManager.songs.sort(function(a, b) {
-      var
-      x = parseInt(a.meta.track), // Track #1
-      y = parseInt(b.meta.track), // Track #2
-      i = parseInt(a.meta.disc), // Disc #1
-      j = parseInt(b.meta.disc); // Disc #2
-      return (i < j) ? -1 : (i == j) ? (x < y) ? -1 : (x == y) ? 0 : 1 : 1;
-    });
-    playlist.init();
-
-  },
-
-  shows:function() {
-
-    // Sort the albums alphabetically
-    dataManager.shows.sort(function(a, b) {
-      var retVal = 0;
-      if (null != a.title && null != b.title) {
-        var x = a.title.toLowerCase(), y = b.title.toLowerCase();
-
-        // Sort around articles
-        if (x.substr(0, 4) === "the ") { x = x.substr(4); }
-        if (x.substr(0, 3) === "an ") { x = x.substr(3); }
-        if (x.substr(0, 2) === "a ") { x = x.substr(2); }
-        if (y.substr(0, 4) === "the ") { y = y.substr(4); }
-        if (y.substr(0, 3) === "an ") { y = y.substr(3); }
-        if (y.substr(0, 2) === "a ") { y = y.substr(2); }
-
-        retVal = (x < y) ? -1 : (x == y) ? 0 : 1;
-      }
-      return retVal;
-    });
-
-  },
-
-  videos:function() {
-    dataManager.videos.sort(function(a, b) {
-      var
-      i = a.meta.hasOwnProperty('episode') ? parseInt(a.meta.episode) : 0,
-      j = b.meta.hasOwnProperty('episode') ? parseInt(b.meta.episode) : 0,
-      x = a.meta.hasOwnProperty('season') ? parseInt(a.meta.season) : 0,
-      y = b.meta.hasOwnProperty('season') ? parseInt(b.meta.season) : 0;
-      return (x < y) ? -1 : (x == y) ? (i < j) ? -1 : (i == j) ? 0 : 1 : 1;
-    });
-  },
-
-  content:function(d) {
-    var item = null;
-
-    // Blank any existing data
-    dataManager.albums = [];
-    dataManager.songs = [];
-    dataManager.shows = [];
-    dataManager.videos = [];
-
-    for (var i = 0, count = d.body.length; i < count; i++) {
-      item = d.body[i];
-      if (dataManager.hasOwnProperty(item.type + 's')) {
-        dataManager[item.type + 's'].push(item);
-      }
-    }
-
-    // Have each content type perform whatever initial data actions need to be performed
-    load.albums();
-    load.songs();
-    load.shows();
-    load.videos();
-    tags.load();
-
-    if (window.location.hash) {
-      playlist.queueSong(window.location.hash.replace('#', ''));
-    }
-
-    // Display whatever list needs to be displayed
-    var list = $.cookie('list');
-    display.listByType(list);
-
-  }
-},
-
 init = function() {
 
   if (!userName) {
@@ -1287,14 +611,14 @@ init = function() {
     $.cookie('userName', userName, { expires:90 });
   }
 
-  dx.call('dxmp', 'getData', {}, load.content);
+  dx.call('dxmp', 'getData', {}, dataLoader.content);
 
   player.setPlayer(playerType);
   if (playerType == 'vlc') {
-    $vlc.removeClass('disabled');
+    domElements.$vlc.removeClass('disabled');
   }
-  $nowPlaying.delegate('.tags li', 'click', tags.click);
-  $playPause.click(playPauseClick);
+  domElements.$nowPlaying.delegate('.tags li', 'click', tagManager.click);
+  domElements.$playPause.click(playPauseClick);
   $('#random').click(randomClick);
   $('#next').click(nextClick);
   $('#smartPlaylist').click(music.smartPlaylistClick);
@@ -1303,7 +627,7 @@ init = function() {
   $('#savePlaylist').click(savePlaylistClick);
   $('body').delegate('#videoList .close', 'click', video.closeClick);
   $('body').delegate('#videoList .head', 'click', video.headClick);
-  $search.keyup(searchKeyEvent);
+  domElements.$search.keyup(searchKeyEvent);
   devices.init();
   drag.init();
   $('#settings').click(dataManager.getSongGenres);
