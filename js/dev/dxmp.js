@@ -1,6 +1,7 @@
 import dx from './dxapi';
 import Player from './player';
 import templates from './templating';
+import dataManager from './data-manager';
 
 var
 
@@ -40,121 +41,6 @@ createPerma = function(val) {
     val = val.replace(/\s\s/g, ' ').replace(/\s/g, '-').toLowerCase();
   }
   return val;
-},
-
-// Data storage and handlers
-data = {
-
-  // Data arrays
-  albums:[],
-  songs:[],
-  shows:[],
-  videos:[],
-  tags:[],
-
-  defaultAlbum:{
-    id:null,
-    title:'No Album',
-    meta:{art:'no_art.png'},
-    children:1
-  },
-
-  // Helper methods
-  getSongsByAlbumId:function(id) {
-    return this.getItemsByParentId(id, 'songs');
-  },
-
-  getItemsByParentId:function(id, itemType) {
-    var retVal = [], item = null;
-    for (var i in data[itemType]) {
-      if (data[itemType].hasOwnProperty(i)) {
-        if (data[itemType][i].parent === id) {
-          retVal.push(data[itemType][i]);
-        }
-      }
-    }
-    return retVal;
-  },
-
-  getItemById:function(id, itemType) {
-    var retVal = null;
-
-    for (var i in data[itemType]) {
-      if (data[itemType].hasOwnProperty(i)) {
-        var item = data[itemType][i];
-        if (parseInt(item.id) === parseInt(id)) {
-          retVal = item;
-          break;
-        }
-      }
-    }
-
-    return retVal;
-  },
-
-  getSongGenres:function() {
-
-    var genres = {}, retVal = [], i = null;
-
-    for (i in data.songs) {
-      if (data.songs.hasOwnProperty(i)) {
-        var song = data.songs[i];
-        if (null != song.meta && null != song.meta.genre) {
-          genres[song.meta] = true;
-        }
-      }
-    }
-
-    for (i in genres) {
-      if (genres.hasOwnProperty(i)) {
-        retVal.push(i);
-      }
-    }
-
-    return retVal;
-
-  },
-
-  checkSongForTags:function(song, tags) {
-    var retVal = false, tag = null;
-
-    if (typeof(song) === 'object' && null != song && ((typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) || tags.indexOf('all') === 0)) {
-      if (!(typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) && tags.indexOf('all') === 0) {
-        retVal = true;
-      } else {
-        for (var i = 0, count = song.tags.length; i < count; i++) {
-          tag = song.tags[i].name;
-          if (tags.indexOf(',' + tag + ',') > -1) {
-            retVal = true;
-          } else if (tags.indexOf(',-' + tag + ',') !== -1) {
-            retVal = false;
-            break;
-          }
-        }
-      }
-    }
-    return retVal;
-  },
-
-  getAlbumArt:function(album) {
-    var retVal = 'no_art.png';
-    if (null != album && null != album.meta && typeof(album.meta.art) !== 'undefined') {
-      retVal = album.meta.art;
-    }
-    return retVal;
-  },
-
-  populateTags:function() {
-    for (var i = 0, count = data.songs.length; i < count; i++) {
-      for (var j = 0, tagCount = data.songs[i].tags.length; j < tagCount; j++) {
-        if ($.inArray(data.songs[i].tags[j].name, data.tags) === -1) {
-          data.tags.push(data.songs[i].tags[j].name);
-        }
-      }
-    }
-    data.tags.sort();
-  }
-
 },
 
 // Helpers
@@ -201,9 +87,9 @@ playlist = (function() {
 
   queueSong = function(id) {
     var
-    song = data.getItemById(id, 'songs'),
-    album = data.getItemById(song.parent, 'albums'),
-    art = data.getAlbumArt(album),
+    song = dataManager.getItemById(id, 'songs'),
+    album = dataManager.getItemById(song.parent, 'albums'),
+    art = dataManager.getAlbumArt(album),
     out = templates.render('albumListItem', {id:list.length, art:art, title:song.title});
 
     // Recalculate the playlist time
@@ -225,11 +111,11 @@ playlist = (function() {
     var retVal = [], randomTags = tags.join(',');
     $.cookie('random_tags', randomTags, { expires:90 });
     if (randomAll || randomTags == null || randomTags.length == 0) {
-      retVal = data.songs;
+      retVal = dataManager.songs;
     } else {
-      for (var i in data.songs) {
-        if (data.checkSongForTags(data.songs[i], ',' + randomTags + ',')) {
-          retVal.push(data.songs[i]);
+      for (var i in dataManager.songs) {
+        if (dataManager.checkSongForTags(dataManager.songs[i], ',' + randomTags + ',')) {
+          retVal.push(dataManager.songs[i]);
         }
       }
     }
@@ -304,7 +190,7 @@ playlist = (function() {
   },
 
   getPlayingSong = function() {
-    return data.getItemById(list[currentSong], 'songs');
+    return dataManager.getItemById(list[currentSong], 'songs');
   },
 
   toggleInfinite = function() {
@@ -333,7 +219,7 @@ playlist = (function() {
       tags = tagCookie.split(',');
       songs = getEligibleSongs();
     } else {
-      songs = data.songs;
+      songs = dataManager.songs;
     }
   };
 
@@ -597,7 +483,7 @@ songClick = function(e) {
     case 'all':
       var
       album_id = $this.parents('ol:first').attr('album_id'),
-      songs = data.getSongsByAlbumId(album_id);
+      songs = dataManager.getSongsByAlbumId(album_id);
 
       for (var i = 0, count = songs.length; i < count; i++) {
         playlist.queueSong(songs[i].id);
@@ -636,7 +522,7 @@ albumClick = function(e) {
     albumId = $this.attr('album_id');
   }
 
-  var songs = data.getSongsByAlbumId(albumId), out = '<li song_id="back" class="song">Back</li><li song_id="all" class="song">Play All</li>';
+  var songs = dataManager.getSongsByAlbumId(albumId), out = '<li song_id="back" class="song">Back</li><li song_id="all" class="song">Play All</li>';
 
   for (var i in songs) {
     if (songs.hasOwnProperty(i)) {
@@ -702,9 +588,9 @@ tags = {
     var
     out = '<li data-tag="done">Done<span class="remove">&times;</span></li>',
     cookieTags = $.cookie('random_tags');
-    data.populateTags();
-    for (var i = 0, count = data.tags.length; i < count; i++) {
-      out += templates.render('tagListItem', { tag_name:data.tags[i] });
+    dataManager.populateTags();
+    for (var i = 0, count = dataManager.tags.length; i < count; i++) {
+      out += templates.render('tagListItem', { tag_name:dataManager.tags[i] });
     }
     $tagList.html(out);
     $('#randomSettings').on('click', tags.listClick);
@@ -775,8 +661,8 @@ video = {
     var
     $target = e.currentTarget,
     showId = $target.getAttribute('show_id'),
-    show = data.getItemById(showId, 'shows'),
-    videos = data.getItemsByParentId(showId, 'videos'),
+    show = dataManager.getItemById(showId, 'shows'),
+    videos = dataManager.getItemsByParentId(showId, 'videos'),
     video = null,
     noSeason = [],
     lastSeason = null,
@@ -855,8 +741,8 @@ display = {
   shows:function() {
     var out = '', item = null, art = '';
 
-    for (var i in data.shows) {
-      item = data.shows[i];
+    for (var i in dataManager.shows) {
+      item = dataManager.shows[i];
       if (item.children > 0) {
         art = item.meta.hasOwnProperty('art') ? item.meta.art : false;
         out += art ? templates.render('showWithArt', { id:item.id, art:art, title:item.title }) : templates.render('show', { id:item.id, title:item.title });
@@ -877,10 +763,10 @@ display = {
     $mainList.empty();
     var out = '', art = '';
 
-    for (var i in data.albums) {
-      var item = data.albums[i];
+    for (var i in dataManager.albums) {
+      var item = dataManager.albums[i];
       if (item.children > 0) {
-        art = data.getAlbumArt(item);
+        art = dataManager.getAlbumArt(item);
         out += templates.render('albumListItem', { id:item.id, art:art, title:item.title });
       }
     }
@@ -984,10 +870,10 @@ display = {
 
   songInfo:function(songId) {
     var
-    song = data.getItemById(songId, 'songs'),
-    album = data.getItemById(song.parent, 'albums'),
+    song = dataManager.getItemById(songId, 'songs'),
+    album = dataManager.getItemById(song.parent, 'albums'),
 
-    art = data.getAlbumArt(album),
+    art = dataManager.getAlbumArt(album),
     tags = '',
     info = '';
 
@@ -1029,8 +915,8 @@ display = {
     for (var i in json.body) {
       var
                   item = json.body[i],
-                  album = data.getItemById(item.album, 'albums'),
-                  art = data.getAlbumArt(album),
+                  album = dataManager.getItemById(item.album, 'albums'),
+                  art = dataManager.getAlbumArt(album),
                   out = templates.render('songWithArt', { id:item.id, art:art, title:item.title, album:item.album });
       $(out).appendTo($mainList);
     }
@@ -1136,7 +1022,7 @@ searchKeyEvent = function(e) {
   var
   val = $.trim($search.val()).toLowerCase(),
   out = '',
-  list = val.length === 1 || searchList.length == 0 ? data.songs : val.length > 1 ? searchList : null,
+  list = val.length === 1 || searchList.length == 0 ? dataManager.songs : val.length > 1 ? searchList : null,
   newList = [],
   lastAlbum = 0;
 
@@ -1162,8 +1048,8 @@ searchKeyEvent = function(e) {
     for (var i in newList) {
       if (newList[i].parent != lastAlbum) {
         var
-        album = data.getItemById(newList[i].parent, 'albums'),
-        art = data.getAlbumArt(album);
+        album = dataManager.getItemById(newList[i].parent, 'albums'),
+        art = dataManager.getAlbumArt(album);
         if (null != album) {
           out += templates.render('albumListItem', {id:newList[i].parent, art:art, title:album.title});
         }
@@ -1250,9 +1136,9 @@ actions = {
       if (msgPlay) {
         var
 
-        song = data.getItemById(item.param.songId, 'songs'),
-        album = data.getItemById(song.parent, 'albums'),
-        artwork = data.getAlbumArt(album);
+        song = dataManager.getItemById(item.param.songId, 'songs'),
+        album = dataManager.getItemById(song.parent, 'albums'),
+        artwork = dataManager.getAlbumArt(album);
 
         $message
           .attr('data-action', 'msg_user_play')
@@ -1286,12 +1172,12 @@ actions = {
 load = {
   albums:function(d) {
 
-    data.albums.push(data.defaultAlbum);
-    data.defaultAlbum.id = 0;
-    data.albums.push(data.defaultAlbum);
+    dataManager.albums.push(dataManager.defaultAlbum);
+    dataManager.defaultAlbum.id = 0;
+    dataManager.albums.push(dataManager.defaultAlbum);
 
     // Sort the albums alphabetically
-    data.albums.sort(function(a, b) {
+    dataManager.albums.sort(function(a, b) {
       var retVal = 0;
       if (null != a.title && null != b.title) {
         var x = a.title.toLowerCase(), y = b.title.toLowerCase();
@@ -1314,7 +1200,7 @@ load = {
   songs:function() {
 
     // Sort the songs by track and disc number
-    data.songs.sort(function(a, b) {
+    dataManager.songs.sort(function(a, b) {
       var
       x = parseInt(a.meta.track), // Track #1
       y = parseInt(b.meta.track), // Track #2
@@ -1329,7 +1215,7 @@ load = {
   shows:function() {
 
     // Sort the albums alphabetically
-    data.shows.sort(function(a, b) {
+    dataManager.shows.sort(function(a, b) {
       var retVal = 0;
       if (null != a.title && null != b.title) {
         var x = a.title.toLowerCase(), y = b.title.toLowerCase();
@@ -1350,7 +1236,7 @@ load = {
   },
 
   videos:function() {
-    data.videos.sort(function(a, b) {
+    dataManager.videos.sort(function(a, b) {
       var
       i = a.meta.hasOwnProperty('episode') ? parseInt(a.meta.episode) : 0,
       j = b.meta.hasOwnProperty('episode') ? parseInt(b.meta.episode) : 0,
@@ -1364,15 +1250,15 @@ load = {
     var item = null;
 
     // Blank any existing data
-    data.albums = [];
-    data.songs = [];
-    data.shows = [];
-    data.videos = [];
+    dataManager.albums = [];
+    dataManager.songs = [];
+    dataManager.shows = [];
+    dataManager.videos = [];
 
     for (var i = 0, count = d.body.length; i < count; i++) {
       item = d.body[i];
-      if (data.hasOwnProperty(item.type + 's')) {
-        data[item.type + 's'].push(item);
+      if (dataManager.hasOwnProperty(item.type + 's')) {
+        dataManager[item.type + 's'].push(item);
       }
     }
 
@@ -1420,7 +1306,7 @@ init = function() {
   $search.keyup(searchKeyEvent);
   devices.init();
   drag.init();
-  $('#settings').click(data.getSongGenres);
+  $('#settings').click(dataManager.getSongGenres);
   actions.init();
 
 };
