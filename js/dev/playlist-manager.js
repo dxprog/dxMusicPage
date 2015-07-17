@@ -1,5 +1,10 @@
 import dataManager from './data-manager';
 import displayManager from './display-manager';
+import templates from './templating';
+import helpers from './helpers';
+import domElements from './dom-elements';
+import player from './player';
+import playProgress from './events';
 
 let playlistManager = function() {
 
@@ -28,7 +33,7 @@ let playlistManager = function() {
       $('#playlistLength').html(helpers.niceTime(time));
     }
 
-    $(out).appendTo($playlist);
+    $(out).appendTo(domElements.$playlist);
     list.push(id);
 
     if (!playing) {
@@ -59,7 +64,7 @@ let playlistManager = function() {
 
   nextSong = function() {
     playing = false;
-    $playlist.find('li[album_id=' + currentSong + ']').removeClass('playing').addClass('played');
+    domElements.$playlist.find('li[album_id=' + currentSong + ']').removeClass('playing').addClass('played');
     currentSong++;
     if (currentSong + 1 <= list.length) {
       playSong(currentSong);
@@ -108,10 +113,10 @@ let playlistManager = function() {
   },
 
   playSong = function(index) {
-    $playPause.attr('title', 'Pause Song').removeClass('play').addClass('pause');
+    domElements.$playPause.attr('title', 'Pause Song').removeClass('play').addClass('pause');
     player.playSong(list[index], songComplete, playProgress);
     playing = true;
-    $playlist.find('li[album_id=' + index + ']').addClass('playing');
+    domElements.$playlist.find('li[album_id=' + index + ']').addClass('playing');
     displayManager.songInfo(list[index]);
   },
 

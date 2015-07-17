@@ -111,7 +111,7 @@ Player.register('html5', (function() {
 			songId = id;
 			mediaEndCallback = callback;
 			audio = document.createElement('audio');
-			audio.src = './api/?type=json&method=dxmp.getTrackFile&id=' + id;
+			audio.src = 'http://dxmp.us/api/?type=json&method=dxmp.getTrackFile&id=' + id;
 			audio.load();
 			audio.play();
 

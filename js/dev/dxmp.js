@@ -6,6 +6,8 @@ import dataLoader from './data-loader';
 import playlistManager from './playlist-manager';
 import tagManager from './tag-manager';
 import domElements from './dom-elements';
+import { songClick, albumClick } from './events';
+import helpers from './helpers';
 
 var
 
@@ -15,7 +17,6 @@ months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'Augus
 playerType = $.cookie('player') || 'html5',
 userName = $.cookie('userName') || false,
 player = Player,
-artLocation = 'http://dxmp.s3.amazonaws.com/images/',
 searchList = [],
 watched = $.cookie('watched') || '',
 actionTimer = null,
@@ -29,33 +30,6 @@ createPerma = function(val) {
     val = val.replace(/\s\s/g, ' ').replace(/\s/g, '-').toLowerCase();
   }
   return val;
-},
-
-// Helpers
-helpers = {
-
-  getTimeParts:function(seconds) {
-
-    var
-    h = Math.floor(seconds / 3600),
-    m = Math.floor((seconds - h * 3600) / 60),
-    s = seconds - h * 3600 - m * 60;
-    return {hours:h, minutes:m, seconds:s};
-
-  },
-
-  padNumber:function(num) {
-    return num < 10 ? '0' + num : num;
-  },
-
-  niceTime:function(seconds) {
-    var parts = this.getTimeParts(seconds);
-    parts.hours = parts.hours > 0 ? parts.hours + ':' : '';
-    parts.minutes = parts.minutes > 0 ? this.padNumber(parts.minutes) + ':' : '';
-    parts.seconds = this.padNumber(parts.seconds);
-    return parts.hours + parts.minutes + parts.seconds;
-  }
-
 },
 
 upload = function(file, contentId, uploadId) {
@@ -177,26 +151,6 @@ drag = {
 
 },
 
-// Events
-playProgress = function(e) {
-
-  if ('playing' === e.state) {
-    var
-    p = e.position / e.length * 100,
-    left = e.length - e.position,
-    m = Math.floor(e.position / 60),
-    s = Math.floor(e.position) % 60,
-    mLeft = Math.floor(left / 60),
-    sLeft = Math.floor(left) % 60;
-    s = s.toString().length === 1 ? '0' + s : s;
-    sLeft = sLeft.toString().length === 1 ? '0' + sLeft : sLeft;
-    domElements.$playHead.css('left', p + '%');
-    domElements.$playIn.text(m + ':' + s);
-    domElements.$playOut.text('-' + mLeft + ':' + sLeft);
-  }
-
-},
-
 editAlbumClick = function(e) {
 
 },
@@ -284,39 +238,6 @@ nextClick = function(e) {
   playlistManager.nextSong();
 },
 
-songClick = function(e) {
-
-  var
-  $this = $(e.target),
-  songId = $this.attr('song_id');
-  if (songId === undefined) {
-    $this = $this.parents('li:first');
-    songId = $this.attr('song_id');
-  }
-
-  switch (songId) {
-    case 'back':
-      $mainList.animate({left:"0"}, 200);
-      $songList.animate({left:"298px"}, 200);
-      break;
-    case 'all':
-      var
-      album_id = $this.parents('ol:first').attr('album_id'),
-      songs = dataManager.getSongsByAlbumId(album_id);
-
-      for (var i = 0, count = songs.length; i < count; i++) {
-        playlistManager.queueSong(songs[i].id);
-      }
-
-      break;
-    default:
-      // player.playSong(songId, function(){}, playProgress);
-      playlistManager.queueSong(songId);
-      break;
-  }
-
-},
-
 savePlaylistClick = function(e) {
   playlistManager.save();
 },
@@ -329,30 +250,6 @@ playlistClick = function(e) {
       playlistManager.queueSong(list[i]);
     }
   }
-},
-
-albumClick = function(e) {
-  var
-  $this = $(e.target),
-  albumId = $this.attr('album_id');
-
-  if (albumId === undefined) {
-    $this = $this.parents('li:first');
-    albumId = $this.attr('album_id');
-  }
-
-  var songs = dataManager.getSongsByAlbumId(albumId), out = '<li song_id="back" class="song">Back</li><li song_id="all" class="song">Play All</li>';
-
-  for (var i in songs) {
-    if (songs.hasOwnProperty(i)) {
-      var song = songs[i];
-      out += '<li song_id="' + song.id + '" class="song">' + song.title + '</li>';
-    }
-  }
-
-  domElements.$mainList.animate({left:"-298px"}, 200);
-  domElements.$songList.attr('album_id', albumId).html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', songClick);
-
 },
 
 music = {

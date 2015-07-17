@@ -112,4 +112,8 @@ let dataManager = {
 
 };
 
-export default dataManager;
+if (!window._dataManager) {
+  window._dataManager = dataManager;
+}
+
+export default window._dataManager;

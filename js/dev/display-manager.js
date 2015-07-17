@@ -1,6 +1,10 @@
 import dataManager from './data-manager';
 import domElements from './dom-elements';
 import templates from './templating';
+import { songClick, albumClick } from './events';
+import dx from './dxapi';
+
+const ART_LOCATION = 'http://dxmp.s3.amazonaws.com/images/';
 
 // List displays
 let displayManager = {
@@ -43,14 +47,14 @@ let displayManager = {
 
   },
 
-      songChartTotal:function(data) {
+  songChartTotal:function(data) {
     var chartData = [[]];
     $('.songInfo').append('<div id="playCountGraph"></div>');
     for (var i = 0, count = data.body.length; i < count; i++) {
       chartData[0].push({ value:data.body[i].total, label:data.body[i].user });
     }
     $('#playCountGraph').dxPlot(chartData, { animate:true, colors:['rgba(200, 209, 83, .6)', 'rgba(94, 224, 203, .6)'] });
-      },
+  },
 
   songChartTime:function(data) {
 
@@ -148,7 +152,7 @@ let displayManager = {
       tags += templates.render('songTags', {'tag_name':song.tags[i].name});
     }
 
-    info = templates.render('songInfo', {'album_title':album.title, 'song_title':song.title, 'art':artLocation + art, 'tags':tags});
+    info = templates.render('songInfo', {'album_title':album.title, 'song_title':song.title, 'art':ART_LOCATION + art, 'tags':tags});
     document.title = song.title + ' - dxMusicPage';
     domElements.$nowPlaying.find('.songInfo').animate({'top':'+=200px', 'opacity':'0'}, 500, function() { $(this).remove(); });
     domElements.$nowPlaying
@@ -158,18 +162,18 @@ let displayManager = {
       .animate({'left':'30px', 'opacity':'1'}, 500, function() {
         $(this).removeClass('new');
         dx.call('stats', 'getTrackUsers', { id:song.id }, displayManager.songChartTotal);
-        dx.call('stats', 'getUserPlaysByDay', { id:song.id, user:userName }, displayManager.songChartTime);
-        $main.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
+        // dx.call('stats', 'getUserPlaysByDay', { id:song.id, user:userName }, displayManager.songChartTime);
+        domElements.$main.find('.wallpaper').fadeOut(500, function() { $(this).remove(); });
         if (null != album.meta && typeof (album.meta.wallpaper) === 'string') {
           var
-          wallpaper = templates.render('wallpaper', {'src':artLocation + album.meta.wallpaper}),
+          wallpaper = templates.render('wallpaper', {'src':ART_LOCATION + album.meta.wallpaper}),
           $wallpaper = $(wallpaper);
           var image = new Image();
           image.onload = function() {
             domElements.$main.prepend($wallpaper);
             domElements.$main.find('.wallpaper.new').fadeIn(500, function() { $(this).removeClass('new'); });
           };
-          image.src = artLocation + album.meta.wallpaper;
+          image.src = ART_LOCATION + album.meta.wallpaper;
         }
       });
 
