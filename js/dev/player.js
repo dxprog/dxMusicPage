@@ -10,12 +10,10 @@ let Player = Fiber.extend(function() {
     init: function() {
       this._players = {};
       this._currentPlayer = null;
-      this._date = Date.now();
     },
 
     register: function(name, player) {
       this._players[name] = player;
-      console.log(this._date);
       if (!this._currentPlayer) {
         this.setPlayer(name);
       }
@@ -68,7 +66,6 @@ let Player = Fiber.extend(function() {
 });
 
 if (!window._playerInstance) {
-  console.log('instantiating player');
   window._playerInstance = new Player();
 }
 
