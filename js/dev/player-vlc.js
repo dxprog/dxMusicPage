@@ -1,5 +1,6 @@
+// VLC player
 Player.prototype.vlc = (function($) {
-	
+
 	var
 	mediaEndTimer = null,
 	mediaEndCallback = null,
@@ -12,6 +13,7 @@ Player.prototype.vlc = (function($) {
 	status = null,
 	lastSync = 0,
 	songId = 0,
+	startTime = 0,
 	updateStatus = function(callback) {
 		$.ajax({
 			url:"./api/?type=json&method=vlc.getStatus",
@@ -20,11 +22,11 @@ Player.prototype.vlc = (function($) {
 		});
 	},
 	statusCallback = function(data) {
-		
+
 		status = data.body;
 		lastSync = status.position;
 		clearInterval(positionTimer);
-		
+
 		switch (data.body.state) {
 			case "paused":
 			case "opening\/connecting":
@@ -47,7 +49,6 @@ Player.prototype.vlc = (function($) {
 					clearInterval(positionTimer);
 					playing = false;
 					paused = false;
-					$.get("./api/?type=json&method=logs.logPlay&id=" + songId);
 					mediaEndCallback();
 				}
 				break;
@@ -88,7 +89,7 @@ Player.prototype.vlc = (function($) {
 				dataType:"json",
 				success:statusCallback
 			});
-			
+
 			// If an update callback was provided, keep tabs on the playback position
 			if (typeof(updateCallback) === "function") {
 				status = null;
@@ -99,21 +100,26 @@ Player.prototype.vlc = (function($) {
 			} else {
 				mediaUpdateCallback = null;
 			}
-			
+
 		}
 	},
+
+	playVideo = function(episode, show) {
+
+	},
+
 	kill = function() {
 		clearInterval(positionTimer);
 		clearTimeout(mediaEndTimer);
 		if (playing && !paused) {
 			pause();
 		}
-		return status.position;
+		return 0;
 	},
 	isPlaying = function() {
 		return playing | loading;
 	};
-	
-	return { getStatus:getStatus, pause:pause, playSong:playSong, kill:kill, isPlaying:isPlaying };
-	
+
+	return { getStatus:getStatus, pause:pause, playSong:playSong, playVideo:playVideo, kill:kill, isPlaying:isPlaying };
+
 })(jQuery);

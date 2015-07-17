@@ -3,57 +3,59 @@
  * Copyright (c) 2010 Matt Hackmann
  **/
 
-var Player = function() {
+export default Fiber.extend(function() {
 
-	// Reference to the player plug-in that will handle the media
-	this.currentPlayer = null;
+  // Reference to the player plug-in that will handle the media
+  var currentPlayer = null;
 
-	// Sets the defualt player
-	this.init = function() {
-		this.setPlayer('html5');
-	};
+  return {
+    // Sets the defualt player
+    init: function() {
+      this.setPlayer('html5');
+    },
 
-	// Returns the current playback status (from plug-in)
-	this.getStatus = function() {
-		return this.currentPlayer.getStatus();
-	};
+    // Returns the current playback status (from plug-in)
+    getStatus: function() {
+      return this.currentPlayer.getStatus();
+    },
 
-	// Plays the current media (from plug-in)
-	this.playSong = function(a,b,c) {
-		return this.currentPlayer.playSong(a,b,c);
-	};
+    // Plays the current media (from plug-in)
+    playSong: function(a,b,c) {
+      return this.currentPlayer.playSong(a,b,c);
+    },
 
-	// Plays a video
-	this.playVideo = function(a,b) {
-		return this.currentPlayer.playVideo(a,b);
-	}
+    // Plays a video
+    playVideo: function(a,b) {
+      return this.currentPlayer.playVideo(a,b);
+    },
 
-	// Pauses the current media (from plug-in)
-	this.pause = function() {
-		return this.currentPlayer.pause();
-	};
+    // Pauses the current media (from plug-in)
+    pause: function() {
+      return this.currentPlayer.pause();
+    },
 
-	// Set's the player plug-in, kills the old on if necessary
-	this.setPlayer = function(playerType, params) {
+    // Set's the player plug-in, kills the old on if necessary
+    setPlayer: function(playerType, params) {
 
-		if (this.currentPlayer !== null) {
-			this.currentPlayer.kill();
-		}
+      if (this.currentPlayer !== null) {
+        this.currentPlayer.kill();
+      }
 
-		if (typeof(this[playerType]) == 'object') {
-			this.currentPlayer = this[playerType];
-			if (this.currentPlayer.hasOwnProperty('setParams')) {
-				this.currentPlayer.setParams(params);
-			}
-			return true;
-		} else {
-			return false;
-		}
+      if (typeof(this[playerType]) == 'object') {
+        this.currentPlayer = this[playerType];
+        if (this.currentPlayer.hasOwnProperty('setParams')) {
+          this.currentPlayer.setParams(params);
+        }
+        return true;
+      } else {
+        return false;
+      }
 
-	};
+    },
 
-	this.isPlaying = function() {
-		return this.currentPlayer.isPlaying();
-	}
+    isPlaying: function() {
+      return this.currentPlayer.isPlaying();
+    }
+  };
 
-};
+});
