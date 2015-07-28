@@ -8,8 +8,9 @@ let dataLoader = {
   albums:function(d) {
 
     dataManager.albums.push(dataManager.defaultAlbum);
-    dataManager.defaultAlbum.id = 0;
-    dataManager.albums.push(dataManager.defaultAlbum);
+    var albumCopy = JSON.parse(JSON.stringify(dataManager.defaultAlbum));
+    albumCopy.id = 0;
+    dataManager.albums.push(dataManager.albumCopy);
 
     // Sort the albums alphabetically
     dataManager.albums.sort(function(a, b) {
