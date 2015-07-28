@@ -3,6 +3,8 @@ import playlistManager from './playlist-manager';
 import tagManager from './tag-manager';
 import displayManager from './display-manager';
 
+let ARTICLES = /^(the|a|an)\s/i;
+
 // Data loaders/initializers
 let dataLoader = {
   albums:function(d) {
@@ -10,7 +12,7 @@ let dataLoader = {
     dataManager.albums.push(dataManager.defaultAlbum);
     var albumCopy = JSON.parse(JSON.stringify(dataManager.defaultAlbum));
     albumCopy.id = 0;
-    dataManager.albums.push(dataManager.albumCopy);
+    dataManager.albums.push(albumCopy);
 
     // Sort the albums alphabetically
     dataManager.albums.sort(function(a, b) {
@@ -19,12 +21,8 @@ let dataLoader = {
         var x = a.title.toLowerCase(), y = b.title.toLowerCase();
 
         // Sort around articles
-        if (x.substr(0, 4) === "the ") { x = x.substr(4); }
-        if (x.substr(0, 3) === "an ") { x = x.substr(3); }
-        if (x.substr(0, 2) === "a ") { x = x.substr(2); }
-        if (y.substr(0, 4) === "the ") { y = y.substr(4); }
-        if (y.substr(0, 3) === "an ") { y = y.substr(3); }
-        if (y.substr(0, 2) === "a ") { y = y.substr(2); }
+        x = x.replace(ARTICLES, '');
+        y = y.replace(ARTICLES, '');
 
         retVal = (x < y) ? -1 : (x == y) ? 0 : 1;
       }
