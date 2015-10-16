@@ -70,24 +70,30 @@ let dataManager = {
 
   },
 
-  checkSongForTags:function(song, tags) {
-    var retVal = false, tag = null;
+  songMatchesTags:function(song, tags) {
+    let retVal = tags instanceof Array && tags.length === 0;
+    let songTags = song.tags instanceof Array ? song.tags.map((tag) => tag.name) : null;
 
-    if (typeof(song) === 'object' && null != song && ((typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) || tags.indexOf('all') === 0)) {
-      if (!(typeof(song.tags) === 'object' && null != song.tags && song.tags.length > 0) && tags.indexOf('all') === 0) {
+    if (!retVal && tags instanceof Array && typeof song === 'object') {
+      if (song.hasOwnProperty('tags') && songTags) {
+
+        // The song is considered matching until one tag conflicts
         retVal = true;
-      } else {
-        for (var i = 0, count = song.tags.length; i < count; i++) {
-          tag = song.tags[i].name;
-          if (tags.indexOf(',' + tag + ',') > -1) {
-            retVal = true;
-          } else if (tags.indexOf(',-' + tag + ',') !== -1) {
+
+        for (let i = 0, count = tags.length; i < count; i++) {
+          let tag = tags[i];
+          let isExclude = tag.charAt(0) === '-';
+          tag = isExclude ? tag.substr(1) : tag;
+
+          if ((isExclude && songTags.indexOf(tag) > -1) || (!isExclude && songTags.indexOf(tag) === -1)) {
             retVal = false;
             break;
           }
+
         }
       }
     }
+
     return retVal;
   },
 

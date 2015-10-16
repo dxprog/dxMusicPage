@@ -1,6 +1,8 @@
 import domElements from './dom-elements';
 import dataManager from './data-manager';
 import playlistManager from './playlist-manager';
+import displayManager from './display-manager';
+import player from './player';
 
 // More stuff that will be refactored into oblivion
 export function songClick(e) {
@@ -34,7 +36,7 @@ export function songClick(e) {
       break;
   }
 
-};
+}
 
 export function albumClick(e) {
   var
@@ -48,17 +50,14 @@ export function albumClick(e) {
 
   var songs = dataManager.getSongsByAlbumId(albumId), out = '<li song_id="back" class="song">Back</li><li song_id="all" class="song">Play All</li>';
 
-  for (var i in songs) {
-    if (songs.hasOwnProperty(i)) {
-      var song = songs[i];
-      out += '<li song_id="' + song.id + '" class="song">' + song.title + '</li>';
-    }
-  }
+  songs.forEach(song => {
+    out += '<li song_id="' + song.id + '" class="song">' + song.title + '</li>';
+  });
 
   domElements.$mainList.animate({left:"-298px"}, 200);
   domElements.$songList.attr('album_id', albumId).html(out).animate({left:"0"}, 200).undelegate('li.song', 'click').delegate('li.song', 'click', songClick);
 
-};
+}
 
 export function playProgress(e) {
   if ('playing' === e.state) {
@@ -75,4 +74,55 @@ export function playProgress(e) {
     domElements.$playIn.text(m + ':' + s);
     domElements.$playOut.text('-' + mLeft + ':' + sLeft);
   }
-};
+}
+
+export function playlistClick(e) {
+  var list = e.currentTarget.getAttribute('data-list');
+  if (list.length > 0) {
+    list = list.split(',');
+    for (var i = 0, count = list.length; i < count; i++) {
+      playlistManager.queueSong(list[i]);
+    }
+  }
+}
+
+export function vlcClick(e) {
+  /* $vlc.toggleClass('disabled');
+  playerType = playerType === 'vlc' ? 'html5' : 'vlc';
+  player.setPlayer(playerType);
+  $.cookie('player', playerType, {expires:90});
+  */
+}
+
+export function playPauseClick(e) {
+  player.pause();
+  var $this = $(e.target), status = player.getStatus();
+  if (status.state === 'playing') {
+    $this.removeClass('play').addClass('pause');
+  } else {
+    $this.removeClass('pause').addClass('play');
+  }
+}
+
+export function optionClick(e) {
+  $('#options').slideToggle();
+}
+
+export function optionsClick(e) {
+  var type = $(e.target).text();
+  displayManager.listByType(type);
+  $.cookie('list', type, {expires:90});
+}
+
+export function randomClick(e) {
+  $(e.target).toggleClass('enabled');
+  playlistManager.toggleRandom();
+}
+
+export function nextClick(e) {
+  playlistManager.nextSong();
+}
+
+export function savePlaylistClick(e) {
+  playlistManager.save();
+}

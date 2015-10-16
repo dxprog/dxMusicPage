@@ -4,9 +4,18 @@ import templates from './templating';
 import dataManager from './data-manager';
 import dataLoader from './data-loader';
 import playlistManager from './playlist-manager';
+import displayManager from './display-manager';
 import tagManager from './tag-manager';
 import domElements from './dom-elements';
-import { songClick, albumClick } from './events';
+import {
+  savePlaylistClick,
+  nextClick,
+  songClick,
+  albumClick,
+  playPauseClick,
+  optionClick,
+  optionsClick,
+  randomClick } from './events';
 import helpers from './helpers';
 
 var
@@ -198,57 +207,6 @@ devices = {
     devices.$.slideUp();
     devices.listDown = false;
 
-  }
-},
-
-vlcClick = function(e) {
-  /* $vlc.toggleClass('disabled');
-  playerType = playerType === 'vlc' ? 'html5' : 'vlc';
-  player.setPlayer(playerType);
-  $.cookie('player', playerType, {expires:90});
-  */
-},
-
-playPauseClick = function(e) {
-  player.pause();
-  var $this = $(e.target), status = player.getStatus();
-  if (status.state === 'playing') {
-    $this.removeClass('play').addClass('pause');
-  } else {
-    $this.removeClass('pause').addClass('play');
-  }
-},
-
-optionClick = function(e) {
-  $('#options').slideToggle();
-},
-
-optionsClick = function(e) {
-  var type = $(e.target).text();
-  displayManager.listByType(type);
-  $.cookie('list', type, {expires:90});
-},
-
-randomClick = function(e) {
-  $(e.target).toggleClass('enabled');
-  playlistManager.toggleRandom();
-},
-
-nextClick = function(e) {
-  playlistManager.nextSong();
-},
-
-savePlaylistClick = function(e) {
-  playlistManager.save();
-},
-
-playlistClick = function(e) {
-  var list = e.currentTarget.getAttribute('data-list');
-  if (list.length > 0) {
-    list = list.split(',');
-    for (var i = 0, count = list.length; i < count; i++) {
-      playlistManager.queueSong(list[i]);
-    }
   }
 },
 
@@ -480,7 +438,7 @@ actions = {
           .stop().animate({ bottom:0 }, 400);
 
         setTimeout(function() {
-          domElements.$message.stop().animate({ bottom:'-' + $message.outerHeight(true) + 'px' });
+          domElements.$message.stop().animate({ bottom:'-' + domElements.$message.outerHeight(true) + 'px' });
         }, 6400);
 
       }

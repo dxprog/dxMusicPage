@@ -4,7 +4,8 @@ import templates from './templating';
 import helpers from './helpers';
 import domElements from './dom-elements';
 import player from './player';
-import playProgress from './events';
+import { playProgress } from './events';
+import dx from './dxapi';
 
 let playlistManager = function() {
 
@@ -16,7 +17,6 @@ let playlistManager = function() {
   infinite = false,
   random = false,
   time = 0,
-  randomAll = false,
   songs = [],
   tags = [],
 
@@ -43,22 +43,23 @@ let playlistManager = function() {
   },
 
   getEligibleSongs = function() {
-    var retVal = [], randomTags = tags.join(',');
-    $.cookie('random_tags', randomTags, { expires:90 });
-    if (randomAll || randomTags == null || randomTags.length == 0) {
+    var retVal = [];
+    $.cookie('random_tags', tags.join(','), { expires:90 });
+    if (!tags || !tags.length) {
       retVal = dataManager.songs;
     } else {
       for (var i in dataManager.songs) {
-        if (dataManager.checkSongForTags(dataManager.songs[i], ',' + randomTags + ',')) {
+        if (dataManager.songMatchesTags(dataManager.songs[i], tags)) {
           retVal.push(dataManager.songs[i]);
         }
       }
     }
+    console.log(retVal);
     return retVal;
   },
 
   songComplete = function() {
-    dx.call('content', 'logContentView', { 'id':list[currentSong], 'user':userName });
+    // dx.call('content', 'logContentView', { 'id':list[currentSong], 'user':userName });
     nextSong();
   },
 
@@ -113,6 +114,7 @@ let playlistManager = function() {
   },
 
   playSong = function(index) {
+    console.log('playing ', index);
     domElements.$playPause.attr('title', 'Pause Song').removeClass('play').addClass('pause');
     player.playSong(list[index], songComplete, playProgress);
     playing = true;

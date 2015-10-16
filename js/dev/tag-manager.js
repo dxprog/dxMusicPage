@@ -1,6 +1,7 @@
 import dataManager from './data-manager';
 import templates from './templating';
 import domElements from './dom-elements';
+import playlistManager from './playlist-manager';
 
 let tagManager = {
   click:function(e) {

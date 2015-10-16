@@ -26,21 +26,6 @@ Player.register('html5', (function() {
 		position:0
 	},
 
-	fadeOutCallback = function() {
-
-		if (fader.volume > 0) {
-			fader.volume -= fadeOutTimerAdjust;
-			if (null != audio) {
-				audio.volume += fadeOutTimerAdjust;
-			}
-		} else {
-			clearInterval(fadeOutTimer);
-			fader = null;
-			audio.volume = 1;
-		}
-
-	},
-
 	getStatus = function() {
 
 		if (!audioSupported) {
@@ -59,15 +44,6 @@ Player.register('html5', (function() {
 			// Get position
 			status.length = audio.duration;
 			status.position = audio.currentTime;
-
-			if (audio.currentTime >= audio.duration - fadeOutSeconds && audio.duration >= 30) {
-				fader = audio;
-				audio = null;
-				fadeOutTimer = setInterval(fadeOutCallback, fadeOutTimerInterval);
-				songComplete();
-			} else if (audio.currentTime === audio.duration) {
-				songComplete();
-			}
 
 		}
 
@@ -125,7 +101,7 @@ Player.register('html5', (function() {
 			audio.addEventListener('canplaythrough', beginPlayback);
 
 			// Set up the song complete callback
-			// audio.addEventListener("ended", songComplete);
+			audio.addEventListener('ended', songComplete);
 
 			// If an update callback was provided, keep tabs on the playback position
 			if (typeof(updateCallback) === "function") {
