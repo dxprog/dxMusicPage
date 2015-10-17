@@ -2,9 +2,9 @@ import dx from './dxapi';
 import Player from './player';
 import templates from './templating';
 import dataManager from './data-manager';
+import displayManager from './display-manager';
 import dataLoader from './data-loader';
 import playlistManager from './playlist-manager';
-import displayManager from './display-manager';
 import tagManager from './tag-manager';
 import domElements from './dom-elements';
 import {

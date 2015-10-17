@@ -44,6 +44,9 @@ let dataLoader = {
     });
     playlistManager.init();
 
+    console.log(window._data);
+    debugger;
+
   },
 
   shows:function() {

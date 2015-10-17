@@ -1,11 +1,23 @@
+// Singleton
+if (!window._data) {
+  console.log('creating data');
+  window._data = {
+    albums:[],
+    songs:[],
+    shows:[],
+    videos:[],
+    tags:[]
+  };
+}
+
 let dataManager = {
 
-  // Data arrays
-  albums:[],
-  songs:[],
-  shows:[],
-  videos:[],
-  tags:[],
+  // Pointers for now
+  albums: (function() { return window._data.albums; }()),
+  songs: window._data.songs,
+  shows: window._data.shows,
+  videos: window._data.videos,
+  tags: window._data.tags,
 
   defaultAlbum:{
     id:null,
@@ -16,15 +28,18 @@ let dataManager = {
 
   // Helper methods
   getSongsByAlbumId:function(id) {
-    return this.getItemsByParentId(id, 'songs');
+    return dataManager.getItemsByParentId(id, 'songs');
   },
 
   getItemsByParentId:function(id, itemType) {
-    var retVal = [], item = null;
-    for (var i in dataManager[itemType]) {
-      if (dataManager[itemType].hasOwnProperty(i)) {
-        if (dataManager[itemType][i].parent === id) {
-          retVal.push(dataManager[itemType][i]);
+    var retVal = [],
+        item = null,
+        data = dataManager[itemType];
+
+    for (var i in data) {
+      if (data.hasOwnProperty(i)) {
+        if (data[i].parent === id) {
+          retVal.push(data[i]);
         }
       }
     }
@@ -32,11 +47,12 @@ let dataManager = {
   },
 
   getItemById:function(id, itemType) {
-    var retVal = null;
+    var retVal = null,
+        data = window._data[itemType];
 
-    for (var i in dataManager[itemType]) {
-      if (dataManager[itemType].hasOwnProperty(i)) {
-        var item = dataManager[itemType][i];
+    for (var i in data) {
+      if (data.hasOwnProperty(i)) {
+        var item = data[i];
         if (parseInt(item.id) === parseInt(id)) {
           retVal = item;
           break;
@@ -49,11 +65,12 @@ let dataManager = {
 
   getSongGenres:function() {
 
-    var genres = {}, retVal = [], i = null;
+    var genres = {}, retVal = [], i = null,
+        data = dataManager.songs;
 
-    for (i in dataManager.songs) {
-      if (dataManager.songs.hasOwnProperty(i)) {
-        var song = dataManager.songs[i];
+    for (i in data) {
+      if (data.hasOwnProperty(i)) {
+        var song = data[i];
         if (null != song.meta && null != song.meta.genre) {
           genres[song.meta] = true;
         }
@@ -106,14 +123,16 @@ let dataManager = {
   },
 
   populateTags:function() {
-    for (var i = 0, count = dataManager.songs.length; i < count; i++) {
-      for (var j = 0, tagCount = dataManager.songs[i].tags.length; j < tagCount; j++) {
-        if ($.inArray(dataManager.songs[i].tags[j].name, dataManager.tags) === -1) {
-          dataManager.tags.push(dataManager.songs[i].tags[j].name);
+    var data = dataManager.songs,
+        tags = dataManager.tags;
+    for (var i = 0, count = data.length; i < count; i++) {
+      for (var j = 0, tagCount = data[i].tags.length; j < tagCount; j++) {
+        if ($.inArray(data[i].tags[j].name, tags) === -1) {
+          tags.push(data[i].tags[j].name);
         }
       }
     }
-    dataManager.tags.sort();
+    tags.sort();
   }
 
 };
