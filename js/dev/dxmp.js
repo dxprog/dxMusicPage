@@ -1,4 +1,7 @@
+import $ from 'jquery';
+
 import dx from './dxapi';
+import cookie from './cookie';
 import Player from './player';
 import templates from './templating';
 import dataManager from './data-manager';
@@ -23,11 +26,11 @@ var
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
 
 // Various objects and variables
-playerType = $.cookie('player') || 'html5',
-userName = $.cookie('userName') || false,
+playerType = cookie.eat('player') || 'html5',
+userName = cookie.eat('userName') || false,
 player = Player,
 searchList = [],
-watched = $.cookie('watched') || '',
+watched = cookie.eat('watched') || '',
 actionTimer = null,
 
 isMobile = (/(iphone|sonyericsson|blackberry|iemobile|windows ce|windows phone|nokia|samsung|android)/ig).test(window.navigator.userAgent),
@@ -301,7 +304,7 @@ video = {
       player.playVideo(episode, show);
       if (watched.indexOf(',' + episodeId) === -1) {
         watched += ',' + episodeId;
-        $.cookie('watched', watched, { expires:365});
+        cookie.bake('watched', watched, 365);
       }
     }
   }
@@ -463,7 +466,7 @@ init = function() {
 
   if (!userName) {
     userName = prompt('Identify yourself (10 characters max)');
-    $.cookie('userName', userName, { expires:90 });
+    cookie.bake('userName', userName, 90);
   }
 
   dx.call('dxmp', 'getData', {}, dataLoader.content);

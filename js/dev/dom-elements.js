@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 // This is a temporary solution while I split things out
 export default {
   $main: $('#main'),

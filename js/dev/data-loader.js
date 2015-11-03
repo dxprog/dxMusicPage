@@ -1,3 +1,4 @@
+import cookie from './cookie';
 import dataManager from './data-manager';
 import playlistManager from './playlist-manager';
 import tagManager from './tag-manager';
@@ -43,10 +44,6 @@ let dataLoader = {
       return (i < j) ? -1 : (i == j) ? (x < y) ? -1 : (x == y) ? 0 : 1 : 1;
     });
     playlistManager.init();
-
-    console.log(window._data);
-    debugger;
-
   },
 
   shows:function() {
@@ -111,7 +108,7 @@ let dataLoader = {
     }
 
     // Display whatever list needs to be displayed
-    var list = $.cookie('list');
+    var list = cookie.eat('list');
     displayManager.listByType(list);
 
   }

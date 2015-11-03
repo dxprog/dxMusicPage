@@ -1,3 +1,6 @@
+import $ from 'jquery';
+
+import cookie from './cookie';
 import dataManager from './data-manager';
 import displayManager from './display-manager';
 import templates from './templating';
@@ -44,7 +47,7 @@ let playlistManager = function() {
 
   getEligibleSongs = function() {
     var retVal = [];
-    $.cookie('random_tags', tags.join(','), { expires:90 });
+    cookie.bake('random_tags', tags.join(','), 90);
     if (!tags || !tags.length) {
       retVal = dataManager.songs;
     } else {
@@ -151,7 +154,7 @@ let playlistManager = function() {
   },
 
   init = function() {
-    var tagCookie = $.cookie('random_tags');
+    var tagCookie = cookie.eat('random_tags');
     if (null != tagCookie && tagCookie.length > 0) {
       tags = tagCookie.split(',');
       songs = getEligibleSongs();

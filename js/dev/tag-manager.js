@@ -1,3 +1,6 @@
+import $ from 'jquery';
+
+import cookie from './cookie';
 import dataManager from './data-manager';
 import templates from './templating';
 import domElements from './dom-elements';
@@ -54,7 +57,7 @@ let tagManager = {
   load:function() {
     var
     out = '<li data-tag="done">Done<span class="remove">&times;</span></li>',
-    cookieTags = $.cookie('random_tags');
+    cookieTags = cookie.eat('random_tags');
     dataManager.populateTags();
     for (var i = 0, count = dataManager.tags.length; i < count; i++) {
       out += templates.render('tagListItem', { tag_name:dataManager.tags[i] });

@@ -1,3 +1,6 @@
+import $ from 'jquery';
+
+import cookie from './cookie';
 import domElements from './dom-elements';
 import dataManager from './data-manager';
 import playlistManager from './playlist-manager';
@@ -111,7 +114,7 @@ export function optionClick(e) {
 export function optionsClick(e) {
   var type = $(e.target).text();
   displayManager.listByType(type);
-  $.cookie('list', type, {expires:90});
+  cookie.bake('list', type, 90);
 }
 
 export function randomClick(e) {

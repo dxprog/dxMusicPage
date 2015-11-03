@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 // Singleton
 if (!window._data) {
   console.log('creating data');
@@ -48,7 +50,7 @@ let dataManager = {
 
   getItemById:function(id, itemType) {
     var retVal = null,
-        data = window._data[itemType];
+        data = dataManager[itemType];
 
     for (var i in data) {
       if (data.hasOwnProperty(i)) {

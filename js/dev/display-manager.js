@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 import dataManager from './data-manager';
 import domElements from './dom-elements';
 import templates from './templating';

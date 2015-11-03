@@ -1,3 +1,5 @@
+import Fiber from 'fiber';
+
 /**
  * Player "class" definition
  * Copyright (c) 2010 Matt Hackmann
