@@ -1,18 +1,6 @@
 module.exports = function(grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
-        concat: {
-            options: {
-                separator: ';'
-            },
-            dist: {
-                src: [
-                    'js/lib/*.js',
-                    'build/*.js'
-                ],
-                dest: 'js/dxmp.js'
-            }
-        },
         sass: {
             dist: {
                 files: {
@@ -21,40 +9,33 @@ module.exports = function(grunt) {
                 }
             }
         },
-        handlebars: {
-            compile: {
+        watch: {
+            js: {
+                files: [
+                    'js/dev/*.js'
+                ],
+                tasks: ['browserify']
+            },
+            configFiles: {
+                files: [ 'Gruntfile.js' ],
                 options: {
-                    namespace: 'RB.Templates',
-                    wrapped:true,
-                    processName: function(filename) {
-                        filename = filename.split('/');
-                        filename = filename[filename.length - 1];
-                        return filename.split('.')[0];
-                    }
-                },
-                files: {
-                    'static/js/templates.js': 'views/*.handlebars'
+                    reload: true
                 }
             }
         },
-        watch: {
-            files: [
-                'js/dev/*.js'
-            ],
-            tasks: ['handlebars', 'browserify', 'concat']
-        },
         browserify: {
             options: {
-              transform: [[ 'babelify', { 'stage': 0 }]]
+                transform: [
+                    [ 'babelify', { 'stage': 0 }]
+                ],
+                require: [
+                    './node_modules/jquery/dist/jquery.js:jquery',
+                    './node_modules/fiber/src/fiber.js:fiber'
+                ]
             },
             dist: {
-                files: [{
-                    expand: true,
-                    cwd: 'js/dev',
-                    src: ['*.js'],
-                    dest: 'build',
-                    ext: '.js'
-                }]
+                src: [ './js/dev/dxmp.js' ],
+                dest: './js/dxmp.js'
             }
         }
     });
@@ -65,6 +46,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-sass');
     grunt.loadNpmTasks('grunt-browserify');
 
-    grunt.registerTask('default', ['handlebars', 'sass', 'browserify', 'concat']);
+    grunt.registerTask('default', ['sass', 'browserify']);
 
 };
