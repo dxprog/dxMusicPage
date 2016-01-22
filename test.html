@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="//brick.a.ssl.fastly.net/Source+Sans+Pro:400">
+    <style type="text/css">
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #ced6e4;
+      }
+      #player {
+        width: 530px;
+        height: 90px;
+        position: relative;
+        margin: 200px auto 0;
+        background: #fff;
+        box-shadow: 0 0 15px rgba(0, 0, 0, .25);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      dt { display: none; }
+      .album-info {
+        font: 16px/1.4 'Source Sans Pro', sans-serif;
+        margin-left: 127px;
+      }
+      .album-info img {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 90px;
+        height: 90px;
+        padding: 5px;
+        box-sizing: border-box;
+        box-shadow: 0 0 5px rgba(0, 0, 0, .25);
+      }
+      .album-info .song-title {
+        font-size: 18px;
+        text-transform: uppercase;
+        color: #222;
+      }
+      .album-info .album-title {
+        color: #ccc;
+      }
+      button.play {
+        position: absolute;
+        right: 60px;
+        top: -27px;
+        width: 55px;
+        height: 55px;
+        border: none;
+        border-radius: 55px;
+        background: #fff;
+        box-shadow: 0 0 5px rgba(0, 0, 0, .25);
+        transition: transform 300ms cubic-bezier(0.26, 1.46, 0.61, 0.45), opacity 300ms;
+        opacity: 1;
+      }
+
+      .playing button.play {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      button.pause {
+        opacity: 0;
+        position: absolute;
+        right: 60px;
+        top: -27px;
+        width: 55px;
+        height: 55px;
+        border: none;
+        border-radius: 55px;
+        background: #fff;
+        box-shadow: 0 0 5px rgba(0, 0, 0, .25);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="player">
+      <dl class="album-info">
+        <dt>Album art</dt>
+        <dd><img src="http://dxmp.s3.amazonaws.com/images/neon-genesis-evangelion-album-art.jpg" alt="album art" /></dd>
+        <dt>Song title</dt>
+        <dd class="song-title">Sakura Nagashi</dd>
+        <dt>Album title</dt>
+        <dd class="album-title">Neon Genesis Evangelion 3.33</dd>
+      </dl>
+      <button class="play">Play</button>
+      <button class="pause">Pause</button>
+    </div>
+  </body>
+</html>

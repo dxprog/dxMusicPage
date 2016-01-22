@@ -12,7 +12,7 @@ module.exports = function(grunt) {
         watch: {
             js: {
                 files: [
-                    'js/dev/*.js'
+                    'js/**/*.jsx'
                 ],
                 tasks: ['browserify']
             },
@@ -26,16 +26,16 @@ module.exports = function(grunt) {
         browserify: {
             options: {
                 transform: [
-                    [ 'babelify', { 'stage': 0 }]
+                    [ 'babelify', { stage: [ 'es2015', 'react' ] }]
                 ],
                 require: [
                     './node_modules/jquery/dist/jquery.js:jquery',
-                    './node_modules/fiber/src/fiber.js:fiber'
+                    './node_modules/react/dist/react.js:react'
                 ]
             },
             dist: {
-                src: [ './js/dev/dxmp.js' ],
-                dest: './js/dxmp.js'
+                src: [ './js/index.jsx' ],
+                dest: './dxmp.js'
             }
         }
     });
